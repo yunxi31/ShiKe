@@ -5,6 +5,7 @@ import androidx.work.Constraints
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.pomodoroalert.network.WebhookApi
 import com.pomodoroalert.worker.SyncWorker
 import kotlinx.coroutines.CoroutineScope
@@ -20,17 +21,30 @@ class TaskRepository @Inject constructor(
     private val db: AppDatabase,
     private val webhookApi: WebhookApi,
     private val userPrefs: UserPreferences,
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) {
     private val dao = db.taskDao()
 
     fun getActiveTasks(): Flow<List<TaskEntity>> = dao.getActiveTasks()
 
+    fun getAllTasks(): Flow<List<TaskEntity>> = dao.getAllTasks()
+
     suspend fun insert(task: TaskEntity) = dao.insert(task)
 
+    suspend fun deleteTask(id: String) = dao.deleteTask(id)
+
     suspend fun updateStatus(id: String, newStatus: String) {
+        if (id.startsWith("quick_countdown_")) return
         dao.updateStatus(id, newStatus)
         // If task is finished (Completed/Abandoned/Postponed), trigger sync
+        if (newStatus == "已完成" || newStatus == "已放弃" || newStatus == "推迟") {
+            triggerSync(id)
+        }
+    }
+
+    suspend fun updateTaskStatus(id: String, newStatus: String, completedAt: Long?) {
+        if (id.startsWith("quick_countdown_")) return
+        dao.updateTaskStatus(id, newStatus, completedAt)
         if (newStatus == "已完成" || newStatus == "已放弃" || newStatus == "推迟") {
             triggerSync(id)
         }

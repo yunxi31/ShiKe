@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:tint="@color/notification_icon_tint"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M12,2a7,7 0,0 0,-7 7v4.32L3.29,15.03A1,1 0,0 0,4 16.74h16a1,1 0,0 0,0.71 -1.71L19,13.32V9a7,7 0,0 0,-7 -7zM12,22a3,3 0,0 0,2.82 -2H9.18A3,3 0,0 0,12 22z" />
+</vector>

@@ -4,58 +4,71 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
-import android.speech.tts.TextToSpeech
-import androidx.core.content.getSystemService
-import java.util.Locale
+import android.media.MediaPlayer
+import android.util.Log
 
-class VoiceManager(private val context: Context) : TextToSpeech.OnInitListener {
-    private var tts: TextToSpeech? = null
+private const val TAG = "PomodoroTTS"
+
+class VoiceManager(private val context: Context) {
     private var audioManager: AudioManager? = null
     private var focusRequest: AudioFocusRequest? = null
+    private var mediaPlayer: MediaPlayer? = null
 
     init {
-        tts = TextToSpeech(context, this)
-        audioManager = context.getSystemService()
+        audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        Log.d(TAG, "VoiceManager init (MediaPlayer mode)")
     }
 
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            tts?.language = Locale.getDefault()
-        }
-    }
-
-    /** Request transient audio focus with ducking */
-    fun requestFocusDuck() {
+    private fun requestFocus() {
         val attrs = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_ALARM)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
             .build()
         focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
             .setAudioAttributes(attrs)
-            .setWillPauseWhenDucked(true)
             .build()
-        audioManager?.requestAudioFocus(focusRequest!!)
+        val result = audioManager?.requestAudioFocus(focusRequest!!)
+        Log.d(TAG, "requestAudioFocus result=$result")
     }
 
     fun abandonFocus() {
         focusRequest?.let { audioManager?.abandonAudioFocusRequest(it) }
+        mediaPlayer?.release()
+        mediaPlayer = null
     }
 
-    /** Speak text via TTS using alarm stream */
+    /** Play the alert WAV from assets */
     fun speak(text: String) {
-        requestFocusDuck()
-        tts?.setAudioAttributes(
-            AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ALARM)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                .build()
-        )
-        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "PomodoroAlertTTS")
-        // Release after speaking (approx 3s)
-        tts?.setOnUtteranceProgressListener(object : TextToSpeech.UtteranceProgressListener() {
-            override fun onStart(utteranceId: String?) {}
-            override fun onDone(utteranceId: String?) { abandonFocus() }
-            override fun onError(utteranceId: String?) { abandonFocus() }
-        })
+        Log.d(TAG, "speak() called, text=$text")
+        requestFocus()
+        try {
+            mediaPlayer?.release()
+            mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build()
+                )
+                val afd = context.assets.openFd("alert.mp3")
+                setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                afd.close()
+                prepare()
+                setOnCompletionListener {
+                    Log.d(TAG, "MediaPlayer onCompletion")
+                    abandonFocus()
+                }
+                setOnErrorListener { _, what, extra ->
+                    Log.e(TAG, "MediaPlayer error what=$what extra=$extra")
+                    abandonFocus()
+                    false
+                }
+                start()
+                Log.d(TAG, "MediaPlayer started")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "MediaPlayer failed: ${e.message}", e)
+            abandonFocus()
+        }
     }
 }

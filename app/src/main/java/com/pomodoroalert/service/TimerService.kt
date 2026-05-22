@@ -11,19 +11,24 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.pomodoroalert.R
+import com.pomodoroalert.MainActivity
 import com.pomodoroalert.ui.AlarmWakeUpActivity
+import com.pomodoroalert.voice.VoiceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+
+object TimerState {
+    val remainingTime = MutableStateFlow(0L)
+}
 
 class TimerService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.Default + Job())
-    private val _remainingTime = MutableStateFlow<Long>(0L)
-    val remainingTime: StateFlow<Long> = _remainingTime
+    private var voiceManager: VoiceManager? = null
+    private var pendingTaskId: String? = null
 
     private val channelId = "timer_service_channel"
     private val notificationId = 1
@@ -32,10 +37,12 @@ class TimerService : Service() {
         super.onCreate()
         createNotificationChannel()
         startForeground(notificationId, buildNotification(0L))
+        voiceManager = VoiceManager(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val duration = intent?.getLongExtra("duration", 0L) ?: 0L
+        pendingTaskId = intent?.getStringExtra("taskId")
         if (duration > 0) {
             startTimer(duration)
         }
@@ -46,20 +53,23 @@ class TimerService : Service() {
         serviceScope.launch {
             var remaining = durationMs
             while (remaining > 0) {
-                _remainingTime.emit(remaining)
+                TimerState.remainingTime.emit(remaining)
                 updateNotification(remaining)
                 delay(1000L)
                 remaining -= 1000L
             }
-            // 时间到，触发闹钟
+            TimerState.remainingTime.emit(0L)
+            // 时间到，触发播报+闹钟（Service 由 AlarmWakeUpActivity 停止）
             triggerAlarm()
-            stopSelf()
         }
     }
 
     private fun triggerAlarm() {
+        // 先让Service里的VoiceManager播报（生命周期不受Activity影响）
+        voiceManager?.speak("威哥，本次专注已经结束，你超棒哦")
         val alarmIntent = Intent(this, AlarmWakeUpActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            pendingTaskId?.let { putExtra("taskId", it) }
         }
         startActivity(alarmIntent)
     }
@@ -68,7 +78,7 @@ class TimerService : Service() {
         val pending = PendingIntent.getActivity(
             this,
             0,
-            Intent(this, com.pomodoroalert.ui.MainActivity::class.java),
+            Intent(this, MainActivity::class.java),
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
         )
         return NotificationCompat.Builder(this, channelId)
@@ -95,6 +105,12 @@ class TimerService : Service() {
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceScope.coroutineContext[Job]?.cancel()
+        // voiceManager 让它自然播完，不提前 abandon
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

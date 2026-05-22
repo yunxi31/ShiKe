@@ -26,14 +26,37 @@ class FocusViewModel @Inject constructor(
     private val _currentTask = MutableStateFlow<TaskEntity?>(null)
     val currentTask: StateFlow<TaskEntity?> = _currentTask.asStateFlow()
 
-    private val _remainingTime = MutableStateFlow<Long>(0L)
-    val remainingTime: StateFlow<Long> = _remainingTime.asStateFlow()
+    val remainingTime: StateFlow<Long> = com.pomodoroalert.service.TimerState.remainingTime.asStateFlow()
 
     fun startFocus(taskId: String) {
         viewModelScope.launch {
+            if (taskId.startsWith("quick_countdown_")) {
+                val durationMs = taskId.substringAfter("quick_countdown_").toLongOrNull() ?: (25 * 60_000L)
+                val task = TaskEntity(
+                    taskId = taskId,
+                    taskName = "快速倒计时",
+                    duration = durationMs,
+                    status = "进行中",
+                    createdAt = System.currentTimeMillis(),
+                    source = "手动"
+                )
+                _currentTask.value = task
+                com.pomodoroalert.service.TimerState.remainingTime.value = durationMs
+                val intent = Intent(context, TimerService::class.java).apply {
+                    putExtra("duration", durationMs)
+                    putExtra("taskId", taskId)
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+                return@launch
+            }
+
             val task = taskRepo.getTaskById(taskId) ?: return@launch
             _currentTask.value = task
-            _remainingTime.value = task.duration
+            com.pomodoroalert.service.TimerState.remainingTime.value = task.duration
             val intent = Intent(context, TimerService::class.java).apply {
                 putExtra("duration", task.duration)
                 putExtra("taskId", taskId)
@@ -60,7 +83,7 @@ class FocusViewModel @Inject constructor(
             )
             val triggerAt = System.currentTimeMillis() + newDuration
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pending)
-            _remainingTime.value = newDuration
+            com.pomodoroalert.service.TimerState.remainingTime.value = newDuration
         }
     }
 

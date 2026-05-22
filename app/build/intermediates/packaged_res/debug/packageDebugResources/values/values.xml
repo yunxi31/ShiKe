@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:ns1="http://schemas.android.com/tools">
+    <color name="launcher_background">#C84C3A</color>
+    <color name="notification_icon_tint">#FFFFFF</color>
+    <color name="pomodoro_accent">#F1D3A2</color>
+    <color name="pomodoro_background">#FFF8F4</color>
+    <color name="pomodoro_primary">#C84C3A</color>
+    <color name="pomodoro_primary_dark">#922F21</color>
+    <color name="pomodoro_surface">#FFF8F4</color>
+    <string name="app_name">Pomodoro Alert</string>
+    <style name="Theme.PomodoroAlert" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor" ns1:targetApi="l">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+        <item name="android:windowBackground">@color/pomodoro_background</item>
+    </style>
+</resources>

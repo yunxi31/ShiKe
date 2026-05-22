@@ -2,11 +2,14 @@ package com.pomodoroalert.di
 
 import android.content.Context
 import androidx.room.Room
+import com.pomodoroalert.data.AlarmDao
 import com.pomodoroalert.data.AppDatabase
 import com.pomodoroalert.data.ConfigRepository
+import com.pomodoroalert.data.StatsRepository
 import com.pomodoroalert.data.TaskDao
 import com.pomodoroalert.data.TaskRepository
 import com.pomodoroalert.data.UserPreferences
+import com.pomodoroalert.voice.CalendarManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,13 +28,16 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "pomodoro_db"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides
     @Singleton
     fun provideTaskDao(db: AppDatabase): TaskDao = db.taskDao()
 
+    @Provides
+    @Singleton
+    fun provideAlarmDao(db: AppDatabase): AlarmDao = db.alarmDao()
 
     @Provides
     @Singleton
