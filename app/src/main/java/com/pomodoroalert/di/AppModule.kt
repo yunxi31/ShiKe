@@ -9,7 +9,6 @@ import com.pomodoroalert.data.StatsRepository
 import com.pomodoroalert.data.TaskDao
 import com.pomodoroalert.data.TaskRepository
 import com.pomodoroalert.data.UserPreferences
-import com.pomodoroalert.voice.CalendarManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -55,11 +54,5 @@ object AppModule {
     @Singleton
     fun provideStatsRepository(taskDao: TaskDao): StatsRepository {
         return StatsRepository(taskDao)
-    }
-
-    @Provides
-    @Singleton
-    fun provideCalendarManager(@ApplicationContext context: Context): CalendarManager {
-        return CalendarManager(context)
     }
 }

@@ -1,0 +1,77 @@
+# ============================
+# Android 构建产物
+# ============================
+/build/
+app/build/
+**/build/
+
+# ============================
+# Gradle 缓存
+# ============================
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+local.properties
+
+# ============================
+# IDE - Android Studio / IntelliJ
+# ============================
+/.idea/
+*.iml
+*.iws
+*.ipr
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries
+.idea/libraries
+.idea/caches
+.idea/modules.xml
+.idea/navEditor.xml
+
+# ============================
+# 签名密钥（绝对不能上传！）
+# ============================
+*.jks
+*.keystore
+keystore.properties
+
+# ============================
+# 系统垃圾文件
+# ============================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================
+# Qoder 工具生成的 Wiki
+# ============================
+.qoder/
+
+# ============================
+# ADB 调试产物（已清理，预防再次产生）
+# ============================
+*.db
+*.db-shm
+*.db-wal
+*.log
+screen*.png
+window_dump*.xml
+
+# ============================
+# Kotlin 编译缓存
+# ============================
+.kotlin/
+
+# ============================
+# ProGuard 临时文件
+# ============================
+/proguard/
+
+# ============================
+# 其他
+# ============================
+*.orig
+*.class
+*.bak
+*~

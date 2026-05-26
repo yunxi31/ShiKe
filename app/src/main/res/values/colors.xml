@@ -5,6 +5,6 @@
     <color name="pomodoro_accent">#F1D3A2</color>
     <color name="pomodoro_surface">#FFF8F4</color>
     <color name="pomodoro_background">#FFF8F4</color>
-    <color name="launcher_background">#C84C3A</color>
+    <color name="launcher_background">#F7F8FC</color>
     <color name="notification_icon_tint">#FFFFFF</color>
 </resources>

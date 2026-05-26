@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.pomodoroalert.data.TaskEntity
 import com.pomodoroalert.data.TaskRepository
 import com.pomodoroalert.data.ConfigRepository
-import com.pomodoroalert.data.CalendarSyncRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,8 +23,7 @@ enum class TodoFilter {
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val taskRepo: TaskRepository,
-    private val configRepo: ConfigRepository,
-    private val calendarRepo: CalendarSyncRepository
+    private val configRepo: ConfigRepository
 ) : ViewModel() {
 
     private val _currentFilter = MutableStateFlow(TodoFilter.ALL)
@@ -84,7 +82,6 @@ class HomeViewModel @Inject constructor(
                 duration = minutes * 60_000L,
                 status = "待开始",
                 createdAt = System.currentTimeMillis(),
-                source = "手动",
                 priority = priority,
                 dueDate = dueDate
             )
@@ -105,19 +102,6 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             taskRepo.deleteTask(taskId)
         }
-    }
-
-    fun syncCalendarTasks() {
-        viewModelScope.launch {
-            calendarRepo.syncTodayEvents()
-        }
-    }
-
-    private fun isToday(timestamp: Long): Boolean {
-        val cal1 = Calendar.getInstance()
-        val cal2 = Calendar.getInstance().apply { timeInMillis = timestamp }
-        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-               cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
     }
 
     private fun isSameDay(t1: Long, t2: Long): Boolean {

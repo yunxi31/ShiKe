@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -28,13 +29,13 @@ import androidx.navigation.NavController
 import com.pomodoroalert.ui.viewmodel.FocusViewModel
 import com.pomodoroalert.ui.localization.LocalLocalization
 
-// Design Tokens
-private val PageBackground = Color(0xFFFFF7F2)
-private val Brand = Color(0xFF7D57C2)
-private val BrandDark = Color(0xFF5B3699)
-private val TextMain = Color(0xFF2E2433)
-private val TextMuted = Color(0xFF6E6177)
-private val ErrorRed = Color(0xFFE57373)
+// Design Tokens adapted to HomeScreen style
+private val PageBackground = Color(0xFFF7F8FC)
+private val Brand = Color(0xFF6C5DD3)      // Main purple-blue
+private val BrandLight = Color(0xFF8B7CF0) // Light purple-blue for gradient
+private val TextMain = Color(0xFF1B1D21)
+private val TextMuted = Color(0xFF808191)
+private val ErrorRed = Color(0xFFFF7A8A)   // Match notification/work red
 
 @Composable
 fun FocusScreen(navController: NavController, taskId: String? = null) {
@@ -58,7 +59,7 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
     }
 
     val backgroundGradient = Brush.verticalGradient(
-        colors = listOf(PageBackground, Color(0xFFF3E8FF))
+        colors = listOf(PageBackground, Color(0xFFEFF0F9))
     )
 
     Surface(
@@ -85,13 +86,13 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
-                            .background(Color.White.copy(alpha = 0.8f))
+                            .background(Color.White)
                             .padding(horizontal = 20.dp, vertical = 10.dp)
                     ) {
                         Text(
                             text = currentTask?.taskName ?: loc.noTaskSelected,
                             style = MaterialTheme.typography.titleMedium,
-                            color = BrandDark,
+                            color = Brand,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -115,7 +116,7 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
                         )
                         drawArc(
                             brush = Brush.linearGradient(
-                                colors = listOf(Color(0xFFB388FF), Brand)
+                                colors = listOf(BrandLight, Brand)
                             ),
                             startAngle = -90f,
                             sweepAngle = animatedProgress * 360f,
@@ -130,9 +131,9 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
                     val minutes = (remainingTime / 1000) / 60
                     Text(
                         text = String.format("%02d:%02d", minutes, seconds),
-                        fontSize = 72.sp,
-                        fontWeight = FontWeight.Light,
-                        color = BrandDark
+                        fontSize = 76.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextMain
                     )
                 }
 
@@ -172,7 +173,7 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
                             containerColor = Brand,
                             contentColor = Color.White,
                             modifier = Modifier.size(72.dp),
-                            shape = RoundedCornerShape(24.dp),
+                            shape = CircleShape,
                             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp, pressedElevation = 12.dp)
                         ) {
                             Icon(Icons.Filled.Check, contentDescription = loc.complete, modifier = Modifier.size(36.dp))

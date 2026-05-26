@@ -77,6 +77,24 @@ private fun ringtoneTitle(uriString: String?): String {
     }
 }
 
+// ── Helper: 获取内置铃声显示名称 ──
+@Composable
+private fun getBuiltInRingtoneDisplayName(fileName: String): String {
+    val loc = LocalLocalization.current
+    return when (fileName) {
+        "alert.mp3" -> loc.ringtoneAlertMp3
+        "alert.wav" -> loc.ringtoneAlertWav
+        else -> fileName.substringBeforeLast(".")
+            .replace('_', ' ')
+            .replace('-', ' ')
+            .trim()
+            .split(" ")
+            .joinToString(" ") { word ->
+                word.replaceFirstChar { it.uppercase() }
+            }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlarmScreen(
@@ -84,6 +102,8 @@ fun AlarmScreen(
     viewModel: AlarmListViewModel = hiltViewModel()
 ) {
     val alarms by viewModel.alarms.collectAsState()
+    val ringtoneSource by viewModel.ringtoneSource.collectAsState()
+    val builtInRingtone by viewModel.builtInRingtone.collectAsState()
     val context = LocalContext.current
 
     // ── Dialog state ──
@@ -204,6 +224,8 @@ fun AlarmScreen(
                     items(alarms, key = { it.alarmId }) { alarm ->
                         AlarmCard(
                             alarm = alarm,
+                            ringtoneSource = ringtoneSource,
+                            builtInRingtone = builtInRingtone,
                             onToggle = { viewModel.toggleAlarm(alarm) },
                             onEdit = { editingAlarm = alarm },
                             onDelete = { viewModel.deleteAlarm(alarm) },
@@ -242,6 +264,8 @@ fun AlarmScreen(
     // ── Add Alarm Dialog ──
     if (showAddDialog) {
         AddAlarmDialog(
+            ringtoneSource = ringtoneSource,
+            builtInRingtone = builtInRingtone,
             onDismiss = { showAddDialog = false },
             onConfirm = { hour, minute, remark, ringtoneUri ->
                 viewModel.addAlarm(hour, minute, remark, ringtoneUri)
@@ -269,6 +293,8 @@ fun AlarmScreen(
 @Composable
 private fun AlarmCard(
     alarm: AlarmEntity,
+    ringtoneSource: String,
+    builtInRingtone: String,
     onToggle: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -338,27 +364,41 @@ private fun AlarmCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val isRingtoneClickable = ringtoneSource != "built_in"
                     // Ringtone label
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(ActiveColor.copy(alpha = 0.08f))
-                            .clickable { onRingtoneClick() }
+                            .background(ActiveColor.copy(alpha = if (isRingtoneClickable) 0.08f else 0.04f))
+                            .then(
+                                if (isRingtoneClickable) {
+                                    Modifier.clickable { onRingtoneClick() }
+                                } else {
+                                    Modifier
+                                }
+                            )
                             .padding(vertical = 4.dp, horizontal = 8.dp)
                             .weight(1f, fill = false)
                     ) {
                         Icon(
                             Icons.Filled.MusicNote,
                             contentDescription = null,
-                            tint = ActiveColor,
+                            tint = if (isRingtoneClickable) ActiveColor else LightBrand,
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
+                        
+                        val displayName = if (ringtoneSource == "built_in") {
+                            getBuiltInRingtoneDisplayName(builtInRingtone)
+                        } else {
+                            ringtoneTitle(alarm.ringtoneUri)
+                        }
+                        
                         Text(
-                            text = ringtoneTitle(alarm.ringtoneUri),
+                            text = displayName,
                             fontSize = 12.sp,
-                            color = ActiveColor,
+                            color = if (isRingtoneClickable) ActiveColor else LightBrand,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -402,6 +442,8 @@ private fun AlarmCard(
 // ═══════════════════════════════════════════════════════════════════════
 @Composable
 private fun AddAlarmDialog(
+    ringtoneSource: String,
+    builtInRingtone: String,
     onDismiss: () -> Unit,
     onConfirm: (hour: Int, minute: Int, remark: String, ringtoneUri: String?) -> Unit
 ) {
@@ -507,26 +549,30 @@ private fun AddAlarmDialog(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // 铃声选择按钮
+                    val isRingtoneClickable = ringtoneSource != "built_in"
                     OutlinedButton(
                         onClick = {
-                            val pickIntent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                                putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
-                                putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, dialogLoc.selectRingtoneTitle)
-                                putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
-                                putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                                if (!ringtoneUri.isNullOrBlank()) {
-                                    putExtra(
-                                        RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
-                                        Uri.parse(ringtoneUri)
-                                    )
+                            if (isRingtoneClickable) {
+                                val pickIntent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, dialogLoc.selectRingtoneTitle)
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                                    if (!ringtoneUri.isNullOrBlank()) {
+                                        putExtra(
+                                            RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
+                                            Uri.parse(ringtoneUri)
+                                        )
+                                    }
                                 }
+                                launchRingtonePicker(pickIntent)
                             }
-                            launchRingtonePicker(pickIntent)
                         },
+                        enabled = isRingtoneClickable,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = ActiveColor
+                            contentColor = if (isRingtoneClickable) ActiveColor else LightBrand
                         )
                     ) {
                         Icon(
@@ -535,8 +581,15 @@ private fun AddAlarmDialog(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
+                        
+                        val displayName = if (ringtoneSource == "built_in") {
+                            getBuiltInRingtoneDisplayName(builtInRingtone)
+                        } else {
+                            ringtoneTitle(ringtoneUri)
+                        }
+                        
                         Text(
-                            text = "${dialogLoc.ringtonePrefix}${ringtoneTitle(ringtoneUri)}",
+                            text = "${dialogLoc.ringtonePrefix}${displayName}",
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )

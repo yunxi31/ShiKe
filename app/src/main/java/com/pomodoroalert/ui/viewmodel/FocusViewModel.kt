@@ -37,8 +37,7 @@ class FocusViewModel @Inject constructor(
                     taskName = "快速倒计时",
                     duration = durationMs,
                     status = "进行中",
-                    createdAt = System.currentTimeMillis(),
-                    source = "手动"
+                    createdAt = System.currentTimeMillis()
                 )
                 _currentTask.value = task
                 com.pomodoroalert.service.TimerState.remainingTime.value = durationMs
@@ -71,19 +70,15 @@ class FocusViewModel @Inject constructor(
 
     fun postpone(minutes: Int) {
         viewModelScope.launch {
-            val task = _currentTask.value ?: return@launch
-            val newDuration = minutes * 60_000L
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val alarmIntent = Intent(context, com.pomodoroalert.receiver.ExactAlarmReceiver::class.java)
-            val pending = PendingIntent.getBroadcast(
-                context,
-                0,
-                alarmIntent,
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
-            )
-            val triggerAt = System.currentTimeMillis() + newDuration
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pending)
-            com.pomodoroalert.service.TimerState.remainingTime.value = newDuration
+            val intent = Intent(context, TimerService::class.java).apply {
+                action = TimerService.ACTION_POSTPONE
+                putExtra("postpone_minutes", minutes)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
         }
     }
 

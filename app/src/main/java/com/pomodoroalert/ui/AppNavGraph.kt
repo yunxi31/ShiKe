@@ -13,6 +13,7 @@ import com.pomodoroalert.ui.screens.FocusScreen
 import com.pomodoroalert.ui.screens.StatsScreen
 import com.pomodoroalert.ui.screens.SettingsScreen
 import com.pomodoroalert.ui.screens.AlarmScreen
+import com.pomodoroalert.ui.screens.SplashScreen
 import com.pomodoroalert.ui.viewmodel.SettingsViewModel
 import com.pomodoroalert.ui.localization.ProvideLocalization
 
@@ -23,7 +24,16 @@ fun AppNavGraph() {
     val language by settingsViewModel.language.collectAsState()
 
     ProvideLocalization(language = language) {
-        NavHost(navController = navController, startDestination = "home") {
+        NavHost(navController = navController, startDestination = "splash") {
+            composable("splash") {
+                SplashScreen(
+                    onSplashFinished = {
+                        navController.navigate("home") {
+                            popUpTo("splash") { inclusive = true }
+                        }
+                    }
+                )
+            }
             composable("home") { HomeScreen(navController) }
             composable(
                 route = "focus?taskId={taskId}",

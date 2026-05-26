@@ -31,10 +31,4 @@ interface TaskDao {
 
     @Query("DELETE FROM tasks WHERE taskId = :id")
     suspend fun deleteTask(id: String)
-
-    @Query("SELECT * FROM tasks WHERE sync_status = 'Sync_Pending'")
-    suspend fun getPendingSyncTasks(): List<TaskEntity>
-
-    @Query("UPDATE tasks SET sync_status = :syncStatus WHERE taskId = :id")
-    suspend fun updateSyncStatus(id: String, syncStatus: String)
 }

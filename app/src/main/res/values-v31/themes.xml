@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.PomodoroAlert.Launcher" parent="Theme.PomodoroAlert">
+        <item name="android:windowBackground">@color/launcher_background</item>
+        <item name="android:statusBarColor" tools:targetApi="l">@color/launcher_background</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/transparent_drawable</item>
+    </style>
+</resources>

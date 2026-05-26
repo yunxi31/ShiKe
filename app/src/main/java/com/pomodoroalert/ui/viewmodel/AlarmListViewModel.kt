@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pomodoroalert.data.AlarmDao
 import com.pomodoroalert.data.AlarmEntity
+import com.pomodoroalert.data.ConfigRepository
 import com.pomodoroalert.receiver.IndependentAlarmReceiver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -24,11 +25,18 @@ import javax.inject.Inject
 @HiltViewModel
 class AlarmListViewModel @Inject constructor(
     private val alarmDao: AlarmDao,
+    private val configRepo: ConfigRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     val alarms: StateFlow<List<AlarmEntity>> = alarmDao.getAllAlarms()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val ringtoneSource: StateFlow<String> = configRepo.ringtoneSource
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "local")
+
+    val builtInRingtone: StateFlow<String> = configRepo.builtInRingtone
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "alert.mp3")
 
     fun addAlarm(hour: Int, minute: Int, remark: String, ringtoneUri: String? = null) {
         viewModelScope.launch {

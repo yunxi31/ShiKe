@@ -18,6 +18,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.pomodoroalert.ui.viewmodel.SettingsViewModel
 import com.pomodoroalert.ui.localization.LocalLocalization
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import android.media.MediaPlayer
 
 // Design Tokens
 private val PageBackground = Color(0xFFF7F8FC)
@@ -33,7 +42,34 @@ fun SettingsScreen(navController: NavController) {
     val earphoneMode by viewModel.earphoneMode.collectAsState()
     val defaultPomodoro by viewModel.defaultPomodoro.collectAsState()
     val currentLang by viewModel.language.collectAsState()
+    val ringtoneSource by viewModel.ringtoneSource.collectAsState()
+    val builtInRingtone by viewModel.builtInRingtone.collectAsState()
     val loc = LocalLocalization.current
+
+    val context = LocalContext.current
+    var previewPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            previewPlayer?.stop()
+            previewPlayer?.release()
+        }
+    }
+
+    fun playPreview(fileName: String) {
+        try {
+            previewPlayer?.stop()
+            previewPlayer?.release()
+            previewPlayer = MediaPlayer().apply {
+                val assetFileDescriptor = context.assets.openFd(fileName)
+                setDataSource(assetFileDescriptor.fileDescriptor, assetFileDescriptor.startOffset, assetFileDescriptor.length)
+                prepare()
+                start()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = PageBackground) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -48,7 +84,10 @@ fun SettingsScreen(navController: NavController) {
             )
 
             Column(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
@@ -139,6 +178,143 @@ fun SettingsScreen(navController: NavController) {
                                 onClick = { viewModel.setLanguage("en") },
                                 modifier = Modifier.weight(1f)
                             )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Ringtone Source Card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
+                        Text(loc.ringtoneModeTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(loc.ringtoneModeDesc, fontSize = 12.sp, color = TextMuted)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Button(
+                                onClick = { viewModel.setRingtoneSource("built_in") },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (ringtoneSource == "built_in") Brand else Brand.copy(alpha = 0.08f),
+                                    contentColor = if (ringtoneSource == "built_in") Color.White else Brand
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(text = loc.ringtoneModeBuiltIn, fontWeight = FontWeight.Bold)
+                            }
+                            Button(
+                                onClick = { 
+                                    viewModel.setRingtoneSource("local") 
+                                    previewPlayer?.stop()
+                                    previewPlayer?.release()
+                                    previewPlayer = null
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (ringtoneSource == "local") Brand else Brand.copy(alpha = 0.08f),
+                                    contentColor = if (ringtoneSource == "local") Color.White else Brand
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(text = loc.ringtoneModeLocal, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+
+                // Built-in Ringtone Selection Card (only show if ringtoneSource is built_in)
+                if (ringtoneSource == "built_in") {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        colors = CardDefaults.cardColors(containerColor = CardBg),
+                        shape = RoundedCornerShape(20.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
+                            Text(loc.selectBuiltInRingtoneTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            val ringtoneFiles = remember {
+                                try {
+                                    val files = context.assets.list("")
+                                    android.util.Log.d("PomodoroAssets", "All assets files in root: " + files?.joinToString())
+                                    files?.filter { 
+                                        it.endsWith(".mp3", ignoreCase = true) || 
+                                        it.endsWith(".wav", ignoreCase = true) || 
+                                        it.endsWith(".ogg", ignoreCase = true) ||
+                                        it.endsWith(".m4a", ignoreCase = true) ||
+                                        it.endsWith(".aac", ignoreCase = true)
+                                    }?.sorted() ?: emptyList()
+                                } catch (e: Exception) {
+                                    android.util.Log.e("PomodoroAssets", "Failed listing assets", e)
+                                    emptyList()
+                                }
+                            }
+                            
+                            if (ringtoneFiles.isEmpty()) {
+                                Text(text = "No ringtones found in assets", color = TextMuted, fontSize = 14.sp)
+                            } else {
+                                // Auto-correct selection if current is not in the list
+                                if (builtInRingtone !in ringtoneFiles) {
+                                    viewModel.setBuiltInRingtone(ringtoneFiles.first())
+                                }
+                                
+                                ringtoneFiles.forEach { fileName ->
+                                    val displayName = when (fileName) {
+                                        "alert.mp3" -> loc.ringtoneAlertMp3
+                                        "alert.wav" -> loc.ringtoneAlertWav
+                                        else -> fileName.substringBeforeLast(".")
+                                            .replace('_', ' ')
+                                            .replace('-', ' ')
+                                            .trim()
+                                            .split(" ")
+                                            .joinToString(" ") { word ->
+                                                word.replaceFirstChar { it.uppercase() }
+                                            }
+                                    }
+                                    val isSelected = builtInRingtone == fileName
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            selected = isSelected,
+                                            onClick = { 
+                                                viewModel.setBuiltInRingtone(fileName) 
+                                                playPreview(fileName)
+                                            },
+                                            colors = RadioButtonDefaults.colors(
+                                                selectedColor = Brand,
+                                                unselectedColor = TextMuted
+                                            )
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = displayName,
+                                            fontSize = 14.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) Brand else TextMain,
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable {
+                                                    viewModel.setBuiltInRingtone(fileName)
+                                                    playPreview(fileName)
+                                                }
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }

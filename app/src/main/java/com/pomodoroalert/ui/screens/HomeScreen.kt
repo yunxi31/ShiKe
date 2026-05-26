@@ -254,6 +254,108 @@ private fun DashboardTab(
 @Composable
 private fun DashboardHeader() {
     val loc = LocalLocalization.current
+    val isZh = loc.hello == "你好！"
+    
+    val quote = remember {
+        val zhQuotes = listOf(
+            "一寸光阴一寸金。",
+            "珍惜当下，始于足下。",
+            "时间是伟大的导师。",
+            "逝者如斯夫，不舍昼夜。",
+            "岁月不待人。",
+            "盛年不重来，一日难再晨。",
+            "合理安排时间，即节约时间。",
+            "抛弃时间，时间也会抛弃你。",
+            "今日事，今日毕。",
+            "莫等闲，白了少年头。",
+            "明日复明日，明日何其多。",
+            "把握今天，胜过两个明天。",
+            "逆水行舟，不进则退。",
+            "业精于勤，荒于嬉。",
+            "少壮不努力，老大徒伤悲。",
+            "时间赠人以慷慨，赠人以智慧。",
+            "黄金宝贵，时间更宝贵。",
+            "过去不回头，未来不将就。",
+            "专注于当下的每一分每一秒。",
+            "时间是创造未来的粘土。",
+            "失去的时间，千金难买。",
+            "每一秒，都是生命的开始。",
+            "慢行也是行，只要不停歇。",
+            "时间是世界上最长又是最短的。",
+            "拖延，是窃取时间的贼。",
+            "每一刻都值得被用心对待。",
+            "用专注致敬流逝的岁月。",
+            "时间是公正的裁判。",
+            "人生太短，专注做好一件事。",
+            "起步虽晚，贵在坚持不懈。",
+            "当下即是最好的时光。"
+        )
+        val enQuotes = listOf(
+            "Time is money.",
+            "Cherish the moment.",
+            "Time is a great teacher.",
+            "Time flies like a river.",
+            "Time waits for no man.",
+            "Youth holds no second morning.",
+            "To save time is to lengthen life.",
+            "Waste time, waste life.",
+            "Today's work, today's completion.",
+            "Do not waste your golden years.",
+            "Tomorrow never comes.",
+            "Tomorrow is another day.",
+            "Work hard, play hard.",
+            "Focus on the now.",
+            "Time is the soil of future.",
+            "Lost time is never found again.",
+            "Every second is a new beginning.",
+            "Go slow, but never stop.",
+            "Time is the wisest counselor.",
+            "Time is gold.",
+            "Focus on one thing at a time.",
+            "Delay is the thief of time.",
+            "Every moment counts.",
+            "Respect the passing time.",
+            "Time is a fair judge.",
+            "Persistence overcomes all.",
+            "Now is the best time.",
+            "Time reveals the truth.",
+            "Diligence pays off.",
+            "Make every minute count.",
+            "The present is a gift."
+        )
+
+        val calendar = java.util.Calendar.getInstance()
+        val year = calendar.get(java.util.Calendar.YEAR)
+        val month = calendar.get(java.util.Calendar.MONTH) // 0-11
+        val day = calendar.get(java.util.Calendar.DAY_OF_MONTH) // 1-31
+        
+        // Seeded random based on year and month to shuffle consistently for the whole month
+        val seed = (year * 12 + month).toLong()
+        val random = java.util.Random(seed)
+        
+        // Shuffle a list of indices from 0 to 30
+        val indices = (0..30).toList().shuffled(random)
+        
+        // Ensure day is within 1..31
+        val targetIndex = (day - 1).coerceIn(0, 30)
+        val quoteIndex = indices[targetIndex]
+        
+        if (isZh) zhQuotes[quoteIndex] else enQuotes[quoteIndex]
+    }
+
+    val dateStr = remember {
+        val calendar = java.util.Calendar.getInstance()
+        val month = calendar.get(java.util.Calendar.MONTH) + 1
+        val day = calendar.get(java.util.Calendar.DAY_OF_MONTH)
+        if (isZh) {
+            "${month}月${day}日"
+        } else {
+            val monthsEn = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+            val monthName = monthsEn.getOrNull(month - 1) ?: ""
+            "$monthName $day"
+        }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -261,44 +363,36 @@ private fun DashboardHeader() {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF6C5DD3).copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("LV", color = Color(0xFF6C5DD3), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(loc.hello, color = Color(0xFF808191), fontSize = 14.sp)
-                Text(
-                    text = "Livia Vaccaro",
-                    color = Color(0xFF1B1D21),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.AccessTime,
+                contentDescription = "Quote",
+                tint = Color(0xFF6C5DD3),
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = quote,
+                color = Color(0xFF1B1D21),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold
+            )
         }
         
-        Box {
-            IconButton(onClick = {}) {
-                Icon(
-                    imageVector = Icons.Rounded.Notifications,
-                    contentDescription = loc.notificationsDescription,
-                    tint = Color(0xFF1B1D21),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFFF7A8A))
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-4).dp, y = 4.dp)
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0xFF6C5DD3).copy(alpha = 0.1f))
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+        ) {
+            Text(
+                text = dateStr,
+                color = Color(0xFF6C5DD3),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
             )
         }
     }

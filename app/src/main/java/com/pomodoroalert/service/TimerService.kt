@@ -7,13 +7,15 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.MediaPlayer
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.pomodoroalert.R
 import com.pomodoroalert.MainActivity
 import com.pomodoroalert.ui.AlarmWakeUpActivity
-import com.pomodoroalert.voice.VoiceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -26,52 +28,96 @@ object TimerState {
 }
 
 class TimerService : Service() {
+    companion object {
+        const val ACTION_START = "ACTION_START"
+        const val ACTION_POSTPONE = "ACTION_POSTPONE"
+        private const val TAG = "TimerService"
+    }
+
     private val serviceScope = CoroutineScope(Dispatchers.Default + Job())
-    private var voiceManager: VoiceManager? = null
+    private var mediaPlayer: MediaPlayer? = null
     private var pendingTaskId: String? = null
 
     private val channelId = "timer_service_channel"
     private val notificationId = 1
 
+    private var timerJob: kotlinx.coroutines.Job? = null
+    private var remainingTimeMs = 0L
+
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
         startForeground(notificationId, buildNotification(0L))
-        voiceManager = VoiceManager(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val duration = intent?.getLongExtra("duration", 0L) ?: 0L
-        pendingTaskId = intent?.getStringExtra("taskId")
-        if (duration > 0) {
-            startTimer(duration)
+        val action = intent?.action
+        if (action == ACTION_POSTPONE) {
+            val minutes = intent.getIntExtra("postpone_minutes", 0)
+            if (minutes > 0) {
+                remainingTimeMs += minutes * 60_000L
+                serviceScope.launch {
+                    TimerState.remainingTime.emit(remainingTimeMs)
+                    updateNotification(remainingTimeMs)
+                }
+            }
+        } else {
+            val duration = intent?.getLongExtra("duration", 0L) ?: 0L
+            pendingTaskId = intent?.getStringExtra("taskId")
+            if (duration > 0) {
+                startTimer(duration)
+            }
         }
         return START_STICKY
     }
 
     private fun startTimer(durationMs: Long) {
-        serviceScope.launch {
-            var remaining = durationMs
-            while (remaining > 0) {
-                TimerState.remainingTime.emit(remaining)
-                updateNotification(remaining)
+        timerJob?.cancel()
+        remainingTimeMs = durationMs
+        timerJob = serviceScope.launch {
+            while (remainingTimeMs > 0) {
+                TimerState.remainingTime.emit(remainingTimeMs)
+                updateNotification(remainingTimeMs)
                 delay(1000L)
-                remaining -= 1000L
+                remainingTimeMs -= 1000L
             }
             TimerState.remainingTime.emit(0L)
-            // 时间到，触发播报+闹钟（Service 由 AlarmWakeUpActivity 停止）
             triggerAlarm()
         }
     }
 
     private fun triggerAlarm() {
-        // 先让Service里的VoiceManager播报（生命周期不受Activity影响）
-        voiceManager?.speak("威哥，本次专注已经结束，你超棒哦")
+        playAlertSound()
         val alarmIntent = Intent(this, AlarmWakeUpActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             pendingTaskId?.let { putExtra("taskId", it) }
         }
         startActivity(alarmIntent)
+    }
+
+    private fun playAlertSound() {
+        try {
+            mediaPlayer?.release()
+            mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build()
+                )
+                val afd = assets.openFd("alert.mp3")
+                setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                afd.close()
+                prepare()
+                setOnCompletionListener {
+                    it.release()
+                    mediaPlayer = null
+                }
+                start()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to play alert sound: ${e.message}", e)
+        }
     }
 
     private fun buildNotification(remainingMs: Long): Notification {
@@ -110,7 +156,6 @@ class TimerService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.coroutineContext[Job]?.cancel()
-        // voiceManager 让它自然播完，不提前 abandon
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

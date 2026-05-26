@@ -23,6 +23,12 @@ class SettingsViewModel @Inject constructor(
     val language: StateFlow<String> = configRepo.language
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "zh")
 
+    val ringtoneSource: StateFlow<String> = configRepo.ringtoneSource
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "local")
+
+    val builtInRingtone: StateFlow<String> = configRepo.builtInRingtone
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "alert.mp3")
+
     fun setEarphoneMode(enabled: Boolean) {
         viewModelScope.launch { configRepo.setEarphoneMode(enabled) }
     }
@@ -33,5 +39,13 @@ class SettingsViewModel @Inject constructor(
 
     fun setLanguage(lang: String) {
         viewModelScope.launch { configRepo.setLanguage(lang) }
+    }
+
+    fun setRingtoneSource(source: String) {
+        viewModelScope.launch { configRepo.setRingtoneSource(source) }
+    }
+
+    fun setBuiltInRingtone(ringtone: String) {
+        viewModelScope.launch { configRepo.setBuiltInRingtone(ringtone) }
     }
 }

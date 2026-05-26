@@ -11,6 +11,7 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_PomodoroAlert)
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {

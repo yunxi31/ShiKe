@@ -63,6 +63,7 @@ class IndependentAlarmReceiver : BroadcastReceiver() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("isIndependentAlarm", true)
             putExtra("alarmRemark", remark)
+            putExtra("alarmId", alarmId)
             ringtoneUri?.let { putExtra("ringtoneUri", it) }
         }
         val pending = PendingIntent.getActivity(

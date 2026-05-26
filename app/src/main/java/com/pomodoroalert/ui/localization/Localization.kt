@@ -87,6 +87,13 @@ class LocalizationStrings(
     val languageSettingTitle: String,
     val languageSettingDesc: String,
     val appLanguage: String,
+    val ringtoneModeTitle: String,
+    val ringtoneModeDesc: String,
+    val ringtoneModeBuiltIn: String,
+    val ringtoneModeLocal: String,
+    val selectBuiltInRingtoneTitle: String,
+    val ringtoneAlertMp3: String,
+    val ringtoneAlertWav: String,
     
     // StatsScreen
     val statsTitle: String,
@@ -108,7 +115,8 @@ class LocalizationStrings(
     val saveBtn: String,
     val cancelBtn: String,
     val deleteAlarm: String,
-    val newAlarmTitle: String
+    val newAlarmTitle: String,
+    val appTagline: String
 )
 
 val ZhStrings = LocalizationStrings(
@@ -179,6 +187,13 @@ val ZhStrings = LocalizationStrings(
     languageSettingTitle = "语言设置",
     languageSettingDesc = "切换应用语言",
     appLanguage = "应用语言",
+    ringtoneModeTitle = "闹钟铃声来源",
+    ringtoneModeDesc = "选择使用默认铃声或自定义铃声",
+    ringtoneModeBuiltIn = "默认铃声",
+    ringtoneModeLocal = "自定义铃声",
+    selectBuiltInRingtoneTitle = "选择默认铃声",
+    ringtoneAlertMp3 = "经典警报声 (alert.mp3)",
+    ringtoneAlertWav = "柔和提示音 (alert.wav)",
     
     statsTitle = "数据统计",
     todayPomodoros = "今日番茄",
@@ -198,7 +213,8 @@ val ZhStrings = LocalizationStrings(
     saveBtn = "保存",
     cancelBtn = "取消",
     deleteAlarm = "删除闹钟",
-    newAlarmTitle = "新闹钟"
+    newAlarmTitle = "新闹钟",
+    appTagline = "保持专注，高效生活"
 )
 
 val EnStrings = LocalizationStrings(
@@ -269,6 +285,13 @@ val EnStrings = LocalizationStrings(
     languageSettingTitle = "Language Settings",
     languageSettingDesc = "Change application language",
     appLanguage = "App Language",
+    ringtoneModeTitle = "Ringtone Source",
+    ringtoneModeDesc = "Choose between default or custom ringtones",
+    ringtoneModeBuiltIn = "Default Ringtone",
+    ringtoneModeLocal = "Custom Ringtone",
+    selectBuiltInRingtoneTitle = "Select Default Ringtone",
+    ringtoneAlertMp3 = "Classic Alert (alert.mp3)",
+    ringtoneAlertWav = "Soft Notification (alert.wav)",
     
     statsTitle = "Statistics",
     todayPomodoros = "Today's Pomos",
@@ -288,7 +311,8 @@ val EnStrings = LocalizationStrings(
     saveBtn = "Save",
     cancelBtn = "Cancel",
     deleteAlarm = "Delete Alarm",
-    newAlarmTitle = "New Alarm"
+    newAlarmTitle = "New Alarm",
+    appTagline = "Stay Focused, Live Efficiently"
 )
 
 val LocalLocalization = staticCompositionLocalOf { ZhStrings }
