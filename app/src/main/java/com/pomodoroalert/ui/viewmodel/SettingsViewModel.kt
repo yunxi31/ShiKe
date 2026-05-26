@@ -17,9 +17,6 @@ class SettingsViewModel @Inject constructor(
     val earphoneMode: StateFlow<Boolean> = configRepo.earphoneMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val defaultPomodoro: StateFlow<Int> = configRepo.defaultPomodoro
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 25)
-
     val language: StateFlow<String> = configRepo.language
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "zh")
 
@@ -31,10 +28,6 @@ class SettingsViewModel @Inject constructor(
 
     fun setEarphoneMode(enabled: Boolean) {
         viewModelScope.launch { configRepo.setEarphoneMode(enabled) }
-    }
-
-    fun setDefaultPomodoro(minutes: Int) {
-        viewModelScope.launch { configRepo.setDefaultPomodoro(minutes) }
     }
 
     fun setLanguage(lang: String) {

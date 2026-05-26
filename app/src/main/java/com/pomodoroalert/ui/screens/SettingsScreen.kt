@@ -40,7 +40,6 @@ private val TextMuted = Color(0xFF808191)
 fun SettingsScreen(navController: NavController) {
     val viewModel: SettingsViewModel = hiltViewModel()
     val earphoneMode by viewModel.earphoneMode.collectAsState()
-    val defaultPomodoro by viewModel.defaultPomodoro.collectAsState()
     val currentLang by viewModel.language.collectAsState()
     val ringtoneSource by viewModel.ringtoneSource.collectAsState()
     val builtInRingtone by viewModel.builtInRingtone.collectAsState()
@@ -117,36 +116,6 @@ fun SettingsScreen(navController: NavController) {
                                 uncheckedThumbColor = Color.White,
                                 uncheckedTrackColor = Color(0xFFE2E2EA)
                             )
-                        )
-                    }
-                }
-
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg),
-                    shape = RoundedCornerShape(20.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
-                        Text(loc.defaultPomodoroTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextMain)
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Slider(
-                            value = defaultPomodoro.toFloat(),
-                            onValueChange = { viewModel.setDefaultPomodoro(it.toInt()) },
-                            valueRange = 1f..60f,
-                            steps = 58,
-                            colors = SliderDefaults.colors(
-                                thumbColor = Brand,
-                                activeTrackColor = Brand,
-                                inactiveTrackColor = Brand.copy(alpha = 0.24f)
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = loc.currentSettingMins(defaultPomodoro),
-                            fontSize = 14.sp,
-                            color = Brand,
-                            fontWeight = FontWeight.Bold
                         )
                     }
                 }

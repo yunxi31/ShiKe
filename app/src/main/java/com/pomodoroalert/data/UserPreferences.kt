@@ -14,14 +14,12 @@ private val Context.dataStore by preferencesDataStore(name = DATASTORE_NAME)
 class UserPreferences(private val context: Context) {
     companion object {
         val KEY_EARPHONE_MODE = booleanPreferencesKey("earphone_mode")
-        val KEY_DEFAULT_POMODORO = intPreferencesKey("default_pomodoro")
         val KEY_LANGUAGE = stringPreferencesKey("language")
         val KEY_RINGTONE_SOURCE = stringPreferencesKey("ringtone_source")
         val KEY_BUILT_IN_RINGTONE = stringPreferencesKey("built_in_ringtone")
     }
 
     val earphoneMode = context.dataStore.data.map { it[KEY_EARPHONE_MODE] ?: true }
-    val defaultPomodoro = context.dataStore.data.map { it[KEY_DEFAULT_POMODORO] ?: 25 }
     val language = context.dataStore.data.map { it[KEY_LANGUAGE] ?: "zh" }
     val ringtoneSource = context.dataStore.data.map { it[KEY_RINGTONE_SOURCE] ?: "local" }
     val builtInRingtone = context.dataStore.data.map { it[KEY_BUILT_IN_RINGTONE] ?: "alert.mp3" }
@@ -32,10 +30,6 @@ class UserPreferences(private val context: Context) {
 
     suspend fun setEarphoneMode(enabled: Boolean) {
         context.dataStore.edit { it[KEY_EARPHONE_MODE] = enabled }
-    }
-
-    suspend fun setDefaultPomodoro(minutes: Int) {
-        context.dataStore.edit { it[KEY_DEFAULT_POMODORO] = minutes }
     }
 
     suspend fun setRingtoneSource(source: String) {

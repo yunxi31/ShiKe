@@ -76,7 +76,7 @@ class HomeViewModel @Inject constructor(
 
     fun addTask(name: String, priority: Int, dueDate: Long?, durationMinutes: Long?) {
         viewModelScope.launch {
-            val minutes = durationMinutes ?: configRepo.getDefaultPomodoro().toLong()
+            val minutes = durationMinutes ?: 25L
             val task = TaskEntity(
                 taskName = name,
                 duration = minutes * 60_000L,
