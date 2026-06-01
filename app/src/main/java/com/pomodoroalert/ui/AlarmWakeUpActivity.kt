@@ -41,13 +41,28 @@ class AlarmWakeUpActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setShowWhenLocked(true)
-        setTurnScreenOn(true)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+            val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as android.app.KeyguardManager
+            keyguardManager.requestDismissKeyguard(this, null)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                        or android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                        or android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+            )
+        }
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         val taskId = intent.getStringExtra("taskId")
+        val isAlarm = intent.getBooleanExtra("isIndependentAlarm", false)
         
-        val customRingtoneUri = intent.getStringExtra("ringtoneUri")
-        playAlarmRingtone(customRingtoneUri)
+        if (!isAlarm) {
+            val customRingtoneUri = intent.getStringExtra("ringtoneUri")
+            playAlarmRingtone(customRingtoneUri)
+        }
 
         setContent {
             MaterialTheme {
@@ -208,7 +223,8 @@ class AlarmWakeUpActivity : ComponentActivity() {
         val isAlarm = intent.getBooleanExtra("isIndependentAlarm", false)
         
         if (isAlarm) {
-            // 独立闹钟：仅关闭并返回
+            // 独立闹钟：停止响铃服务并退出
+            stopService(Intent(this, com.pomodoroalert.service.AlarmService::class.java))
             finish()
             return
         }
@@ -232,6 +248,7 @@ class AlarmWakeUpActivity : ComponentActivity() {
         val isAlarm = intent.getBooleanExtra("isIndependentAlarm", false)
         
         if (isAlarm) {
+            stopService(Intent(this, com.pomodoroalert.service.AlarmService::class.java))
             val alarmId = intent.getStringExtra("alarmId")
             val calendar = java.util.Calendar.getInstance().apply {
                 add(java.util.Calendar.MINUTE, 10)
@@ -254,71 +271,21 @@ class AlarmWakeUpActivity : ComponentActivity() {
                             alarmDao.update(updatedAlarm)
 
                             // 重新调度系统的 AlarmManager 闹钟
-                            val alarmManager = getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-                            val receiverIntent = Intent(this@AlarmWakeUpActivity, com.pomodoroalert.receiver.IndependentAlarmReceiver::class.java).apply {
-                                putExtra("alarmId", updatedAlarm.alarmId)
-                                putExtra("alarmRemark", updatedAlarm.remark.ifBlank { "闹钟时间到了！" })
-                                updatedAlarm.ringtoneUri?.let { putExtra("ringtoneUri", it) }
-                            }
-                            
-                            val requestCode = updatedAlarm.alarmId.hashCode() and 0x7FFFFFFF
-                            val pendingIntent = android.app.PendingIntent.getBroadcast(
-                                this@AlarmWakeUpActivity,
-                                requestCode,
-                                receiverIntent,
-                                android.app.PendingIntent.FLAG_UPDATE_CURRENT or (if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) android.app.PendingIntent.FLAG_IMMUTABLE else 0)
-                            )
-                            
-                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                                val showIntent = Intent(this@AlarmWakeUpActivity, com.pomodoroalert.MainActivity::class.java)
-                                val showPi = android.app.PendingIntent.getActivity(
-                                    this@AlarmWakeUpActivity,
-                                    requestCode,
-                                    showIntent,
-                                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) android.app.PendingIntent.FLAG_IMMUTABLE else 0
-                                )
-                                val info = android.app.AlarmManager.AlarmClockInfo(snoozeTimeMillis, showPi)
-                                alarmManager.setAlarmClock(info, pendingIntent)
-                            } else {
-                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                                    alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, snoozeTimeMillis, pendingIntent)
-                                } else {
-                                    alarmManager.setExact(android.app.AlarmManager.RTC_WAKEUP, snoozeTimeMillis, pendingIntent)
-                                }
-                            }
+                            com.pomodoroalert.service.AlarmScheduler.scheduleAlarm(this@AlarmWakeUpActivity, updatedAlarm)
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
                 }
             } else {
-                // 兜底逻辑：如果没有 alarmId，只在系统级重新注册一个一次性提醒（请求码 1001）
-                val alarmManager = getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-                val receiverIntent = Intent(this, com.pomodoroalert.receiver.IndependentAlarmReceiver::class.java)
-                val pendingIntent = android.app.PendingIntent.getBroadcast(
-                    this,
-                    1001,
-                    receiverIntent,
-                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or (if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) android.app.PendingIntent.FLAG_IMMUTABLE else 0)
+                // 兜底逻辑：如果没有 alarmId，注册一个临时闹钟进行提醒
+                val tempAlarm = com.pomodoroalert.data.AlarmEntity(
+                    alarmId = "temp_snooze",
+                    hour = newHour,
+                    minute = newMinute,
+                    remark = "闹钟推迟提醒"
                 )
-                
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                    val showIntent = Intent(this, com.pomodoroalert.MainActivity::class.java)
-                    val showPi = android.app.PendingIntent.getActivity(
-                        this,
-                        1001,
-                        showIntent,
-                        android.app.PendingIntent.FLAG_UPDATE_CURRENT or if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) android.app.PendingIntent.FLAG_IMMUTABLE else 0
-                    )
-                    val info = android.app.AlarmManager.AlarmClockInfo(snoozeTimeMillis, showPi)
-                    alarmManager.setAlarmClock(info, pendingIntent)
-                } else {
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                        alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, snoozeTimeMillis, pendingIntent)
-                    } else {
-                        alarmManager.setExact(android.app.AlarmManager.RTC_WAKEUP, snoozeTimeMillis, pendingIntent)
-                    }
-                }
+                com.pomodoroalert.service.AlarmScheduler.scheduleAlarm(this, tempAlarm)
             }
             android.widget.Toast.makeText(this, "闹钟已推迟 10 分钟", android.widget.Toast.LENGTH_SHORT).show()
             finish()
@@ -341,6 +308,10 @@ class AlarmWakeUpActivity : ComponentActivity() {
 
     override fun onDestroy() {
         stopAlarm()
+        val isAlarm = intent.getBooleanExtra("isIndependentAlarm", false)
+        if (isAlarm) {
+            stopService(Intent(this, com.pomodoroalert.service.AlarmService::class.java))
+        }
         super.onDestroy()
     }
 }

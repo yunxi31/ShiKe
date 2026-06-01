@@ -26,7 +26,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import android.media.MediaPlayer
+import com.pomodoroalert.ui.SystemPermissionHelper
 
 // Design Tokens
 private val PageBackground = Color(0xFFF7F8FC)
@@ -47,6 +49,20 @@ fun SettingsScreen(navController: NavController) {
 
     val context = LocalContext.current
     var previewPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+    var isIgnoringBattery by remember { mutableStateOf(SystemPermissionHelper.isIgnoringBatteryOptimizations(context)) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                isIgnoringBattery = SystemPermissionHelper.isIgnoringBatteryOptimizations(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -284,6 +300,83 @@ fun SettingsScreen(navController: NavController) {
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Battery Optimization Card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
+                        Text(loc.batteryOptimizationTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(loc.batteryOptimizationDesc, fontSize = 12.sp, color = TextMuted)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val badgeColor = if (isIgnoringBattery) Color(0xFF2E7D32) else Color(0xFFD32F2F)
+                            val badgeText = if (isIgnoringBattery) loc.batteryOptimizationIgnored else loc.batteryOptimizationNotIgnored
+                            
+                            Surface(
+                                color = badgeColor.copy(alpha = 0.08f),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = badgeText,
+                                    color = badgeColor,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                        
+                        if (!isIgnoringBattery) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(
+                                onClick = { SystemPermissionHelper.requestIgnoreBatteryOptimizations(context) },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Brand, contentColor = Color.White),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(text = loc.batteryOptimizationBtn, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+
+                // Auto Start Card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
+                        Text(loc.autoStartTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(loc.autoStartDesc, fontSize = 12.sp, color = TextMuted)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        Button(
+                            onClick = { SystemPermissionHelper.openAutoStartSettings(context) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Brand.copy(alpha = 0.08f),
+                                contentColor = Brand
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(text = loc.autoStartBtn, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

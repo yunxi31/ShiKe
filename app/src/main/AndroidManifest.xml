@@ -3,11 +3,13 @@
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_ALARM" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Android 12+ 精确闹钟权限 -->
@@ -45,7 +47,19 @@
         <service
             android:name=".service.TimerService"
             android:foregroundServiceType="mediaPlayback" />
-        <receiver android:name=".receiver.ExactAlarmReceiver" />
-        <receiver android:name=".receiver.IndependentAlarmReceiver" />
+        <service
+            android:name=".service.AlarmService"
+            android:foregroundServiceType="mediaPlayback" />
+        <receiver
+            android:name=".receiver.ExactAlarmReceiver"
+            android:exported="true" />
+        <receiver
+            android:name=".receiver.IndependentAlarmReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

@@ -108,59 +108,10 @@ class AlarmListViewModel @Inject constructor(
         alarm.alarmId.hashCode() and 0x7FFFFFFF
 
     private fun scheduleSystemAlarm(alarm: AlarmEntity) {
-        val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, IndependentAlarmReceiver::class.java).apply {
-            putExtra("alarmId", alarm.alarmId)
-            putExtra("alarmRemark", alarm.remark.ifBlank { "闹钟时间到了！" })
-            alarm.ringtoneUri?.let { putExtra("ringtoneUri", it) }
-        }
-        val pi = PendingIntent.getBroadcast(
-            context, requestCode(alarm), intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
-        )
-
-        val cal = Calendar.getInstance().apply {
-            timeInMillis = System.currentTimeMillis()
-            set(Calendar.HOUR_OF_DAY, alarm.hour)
-            set(Calendar.MINUTE, alarm.minute)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
-        }
-
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                val showIntent = Intent(context, com.pomodoroalert.MainActivity::class.java)
-                val showPi = PendingIntent.getActivity(
-                    context,
-                    requestCode(alarm),
-                    showIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
-                )
-                val info = AlarmManager.AlarmClockInfo(cal.timeInMillis, showPi)
-                am.setAlarmClock(info, pi)
-            } else {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pi)
-                } else {
-                    am.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pi)
-                }
-            }
-        } catch (e: SecurityException) {
-            e.printStackTrace()
-            Toast.makeText(context, "缺少精确闹钟权限，可能导致提醒不准时", Toast.LENGTH_SHORT).show()
-        }
+        com.pomodoroalert.service.AlarmScheduler.scheduleAlarm(context, alarm)
     }
 
     private fun cancelSystemAlarm(alarm: AlarmEntity) {
-        val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, IndependentAlarmReceiver::class.java)
-        val pi = PendingIntent.getBroadcast(
-            context, requestCode(alarm), intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
-        )
-        am.cancel(pi)
+        com.pomodoroalert.service.AlarmScheduler.cancelAlarm(context, alarm)
     }
 }

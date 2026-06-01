@@ -28,4 +28,7 @@ interface AlarmDao {
 
     @Query("UPDATE alarms SET isEnabled = :enabled WHERE alarmId = :id")
     suspend fun setEnabled(id: String, enabled: Boolean)
+
+    @Query("SELECT * FROM alarms ORDER BY hour ASC, minute ASC")
+    suspend fun getAllAlarmsOnce(): List<AlarmEntity>
 }

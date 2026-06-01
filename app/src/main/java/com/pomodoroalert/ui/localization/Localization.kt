@@ -93,6 +93,16 @@ class LocalizationStrings(
     val ringtoneAlertMp3: String,
     val ringtoneAlertWav: String,
     
+    // Background permissions info
+    val batteryOptimizationTitle: String,
+    val batteryOptimizationDesc: String,
+    val batteryOptimizationIgnored: String,
+    val batteryOptimizationNotIgnored: String,
+    val batteryOptimizationBtn: String,
+    val autoStartTitle: String,
+    val autoStartDesc: String,
+    val autoStartBtn: String,
+    
     // StatsScreen
     val statsTitle: String,
     val todayPomodoros: String,
@@ -191,6 +201,15 @@ val ZhStrings = LocalizationStrings(
     ringtoneAlertMp3 = "经典警报声 (alert.mp3)",
     ringtoneAlertWav = "柔和提示音 (alert.wav)",
     
+    batteryOptimizationTitle = "电池优化 (后台唤醒)",
+    batteryOptimizationDesc = "为保证后台闹钟准时触发，请允许应用忽略电池优化。如果不允许，系统休眠或后台挂起时闹钟将无法触发。",
+    batteryOptimizationIgnored = "已忽略电池优化 (推荐)",
+    batteryOptimizationNotIgnored = "未忽略电池优化 (闹钟可能会失效)",
+    batteryOptimizationBtn = "去关闭电池优化",
+    autoStartTitle = "自启动与后台管理",
+    autoStartDesc = "在部分手机 (如 OPPO / 小米 / 华为等) 上，您需要手动允许应用「自启动」和「允许后台运行」，否则系统会强制杀死后台闹钟服务。",
+    autoStartBtn = "去设置自启动",
+    
     statsTitle = "数据统计",
     todayPomodoros = "今日番茄",
     completedTasksTitle = "完成任务",
@@ -286,6 +305,15 @@ val EnStrings = LocalizationStrings(
     selectBuiltInRingtoneTitle = "Select Default Ringtone",
     ringtoneAlertMp3 = "Classic Alert (alert.mp3)",
     ringtoneAlertWav = "Soft Notification (alert.wav)",
+    
+    batteryOptimizationTitle = "Battery Optimization (Background Sleep)",
+    batteryOptimizationDesc = "To ensure background alarms fire on time, please ignore battery optimization. Otherwise, the system may delay or cancel alarms in deep sleep.",
+    batteryOptimizationIgnored = "Battery optimization ignored (Recommended)",
+    batteryOptimizationNotIgnored = "Battery optimization active (Alarms may fail)",
+    batteryOptimizationBtn = "Disable Battery Optimization",
+    autoStartTitle = "Auto-start & Background Management",
+    autoStartDesc = "On some devices (OPPO, Xiaomi, Huawei, etc.), you must manually enable 'Auto-start' and 'Allow background running' for alarms to work reliably.",
+    autoStartBtn = "Go to Auto-start Settings",
     
     statsTitle = "Statistics",
     todayPomodoros = "Today's Pomos",
