@@ -16,12 +16,14 @@ class UserPreferences(private val context: Context) {
         val KEY_LANGUAGE = stringPreferencesKey("language")
         val KEY_RINGTONE_SOURCE = stringPreferencesKey("ringtone_source")
         val KEY_BUILT_IN_RINGTONE = stringPreferencesKey("built_in_ringtone")
+        val KEY_MOTIVATIONAL_QUOTE = stringPreferencesKey("motivational_quote")
     }
 
     val earphoneMode = context.dataStore.data.map { it[KEY_EARPHONE_MODE] ?: true }
     val language = context.dataStore.data.map { it[KEY_LANGUAGE] ?: "zh" }
     val ringtoneSource = context.dataStore.data.map { it[KEY_RINGTONE_SOURCE] ?: "local" }
     val builtInRingtone = context.dataStore.data.map { it[KEY_BUILT_IN_RINGTONE] ?: "alert.mp3" }
+    val motivationalQuote = context.dataStore.data.map { it[KEY_MOTIVATIONAL_QUOTE] ?: "今天又是充满希望的一天，加油！" }
 
     suspend fun setLanguage(lang: String) {
         context.dataStore.edit { it[KEY_LANGUAGE] = lang }
@@ -37,5 +39,9 @@ class UserPreferences(private val context: Context) {
 
     suspend fun setBuiltInRingtone(ringtone: String) {
         context.dataStore.edit { it[KEY_BUILT_IN_RINGTONE] = ringtone }
+    }
+
+    suspend fun setMotivationalQuote(quote: String) {
+        context.dataStore.edit { it[KEY_MOTIVATIONAL_QUOTE] = quote }
     }
 }

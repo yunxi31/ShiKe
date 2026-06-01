@@ -14,6 +14,7 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.pomodoroalert.MainActivity
@@ -38,7 +39,7 @@ class AlarmService : Service() {
         const val ACTION_START_ALARM = "ACTION_START_ALARM"
         const val ACTION_STOP_ALARM = "ACTION_STOP_ALARM"
         private const val TAG = "AlarmService"
-        private const val CHANNEL_ID = "alarm_service_channel"
+        private const val CHANNEL_ID = "alarm_service_channel_v2"
         private const val NOTIFICATION_ID = 3001
     }
 
@@ -65,11 +66,43 @@ class AlarmService : Service() {
         val ringtoneUri = intent?.getStringExtra("ringtoneUri")
 
         // 1. 立即在前台启动服务以满足 Android 12+ 后台限制，并提升进程优先级避免被 HANS 冻结
-        val notification = buildNotification(alarmId, remark, ringtoneUri)
+        val lockScreenEnabled = intent?.getBooleanExtra("lockScreenEnabled", true) ?: true
+        val notification = buildNotification(alarmId, remark, ringtoneUri, lockScreenEnabled)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         } else {
             startForeground(NOTIFICATION_ID, notification)
+        }
+
+        if (lockScreenEnabled) {
+            // A. Acquire WakeLock with SCREEN_BRIGHT_WAKE_LOCK & ACQUIRE_CAUSES_WAKEUP to wake up screen
+            try {
+                val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+                @Suppress("DEPRECATION")
+                val wl = pm.newWakeLock(
+                    PowerManager.SCREEN_BRIGHT_WAKE_LOCK or
+                            PowerManager.ACQUIRE_CAUSES_WAKEUP or
+                            PowerManager.ON_AFTER_RELEASE,
+                    "PomodoroAlert::AlarmServiceWakeLock"
+                )
+                wl.acquire(10000L)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to acquire screen wakeup lock", e)
+            }
+
+            // B. Direct launch AlarmWakeUpActivity as backup to fullScreenIntent
+            val fullScreenIntent = Intent(this, AlarmWakeUpActivity::class.java).apply {
+                this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("isIndependentAlarm", true)
+                putExtra("alarmRemark", remark)
+                putExtra("alarmId", alarmId)
+                ringtoneUri?.let { putExtra("ringtoneUri", it) }
+            }
+            try {
+                startActivity(fullScreenIntent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start AlarmWakeUpActivity directly from service", e)
+            }
         }
 
         // 2. 异步处理数据库状态更新与铃声播放，避免阻塞主线程
@@ -193,7 +226,12 @@ class AlarmService : Service() {
         }
     }
 
-    private fun buildNotification(alarmId: String?, remark: String, ringtoneUri: String?): Notification {
+    private fun buildNotification(
+        alarmId: String?,
+        remark: String,
+        ringtoneUri: String?,
+        lockScreenEnabled: Boolean = true
+    ): Notification {
         val fullScreenIntent = Intent(this, AlarmWakeUpActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("isIndependentAlarm", true)
@@ -202,12 +240,21 @@ class AlarmService : Service() {
             ringtoneUri?.let { putExtra("ringtoneUri", it) }
         }
 
+        val bundle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            android.app.ActivityOptions.makeBasic()
+                .setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                .toBundle()
+        } else {
+            null
+        }
+
         val pending = PendingIntent.getActivity(
             this,
             2001,
             fullScreenIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+                    (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0),
+            bundle
         )
 
         // Action button to stop alarm
@@ -222,20 +269,38 @@ class AlarmService : Service() {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
         )
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("独立闹钟")
             .setContentText(remark)
-            .setFullScreenIntent(pending, true)
+            .setContentIntent(pending)  // 点击通知条始终打开界面
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
+            .setSound(soundUri)
+            .setVibrate(longArrayOf(0, 500, 500, 500)) // 必须有振动或声音才能触发全屏 Intent 悬浮窗
             .addAction(R.drawable.ic_notification, "关闭", stopPending)
-            .build()
+
+        if (lockScreenEnabled) {
+            builder.setFullScreenIntent(pending, true)
+        }
+
+        return builder.build()
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+            val audioAttributes = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "独立闹钟后台服务",
@@ -243,6 +308,10 @@ class AlarmService : Service() {
             ).apply {
                 description = "用于保证后台闹钟正常响铃"
                 setBypassDnd(true)
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 500, 500, 500)
+                setSound(soundUri, audioAttributes)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             }
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)

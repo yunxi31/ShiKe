@@ -227,6 +227,9 @@ fun AlarmScreen(
                             ringtoneSource = ringtoneSource,
                             builtInRingtone = builtInRingtone,
                             onToggle = { viewModel.toggleAlarm(alarm) },
+                            onLockScreenToggle = { checked ->
+                                viewModel.updateAlarm(alarm.copy(lockScreenEnabled = checked))
+                            },
                             onEdit = { editingAlarm = alarm },
                             onDelete = { viewModel.deleteAlarm(alarm) },
                             onTimeClick = {
@@ -267,8 +270,8 @@ fun AlarmScreen(
             ringtoneSource = ringtoneSource,
             builtInRingtone = builtInRingtone,
             onDismiss = { showAddDialog = false },
-            onConfirm = { hour, minute, remark, ringtoneUri ->
-                viewModel.addAlarm(hour, minute, remark, ringtoneUri)
+            onConfirm = { hour, minute, remark, ringtoneUri, lockScreenEnabled ->
+                viewModel.addAlarm(hour, minute, remark, ringtoneUri, lockScreenEnabled)
                 showAddDialog = false
             }
         )
@@ -296,6 +299,7 @@ private fun AlarmCard(
     ringtoneSource: String,
     builtInRingtone: String,
     onToggle: () -> Unit,
+    onLockScreenToggle: (Boolean) -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onTimeClick: () -> Unit,
@@ -353,6 +357,31 @@ private fun AlarmCard(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = if (alarm.isEnabled) DarkBrand else Color(0xFF808191).copy(alpha = 0.6f)
+                    )
+                }
+
+                // ── Lock Screen Setting Row ──
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    val cardLoc = LocalLocalization.current
+                    Text(
+                        text = cardLoc.lockScreenEnabledTitle,
+                        fontSize = 14.sp,
+                        color = if (alarm.isEnabled) DarkBrand else Color(0xFF808191).copy(alpha = 0.6f)
+                    )
+                    Switch(
+                        checked = alarm.lockScreenEnabled,
+                        onCheckedChange = { onLockScreenToggle(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = ActiveColor,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color(0xFFE2E2EA)
+                        )
                     )
                 }
 
@@ -445,13 +474,14 @@ private fun AddAlarmDialog(
     ringtoneSource: String,
     builtInRingtone: String,
     onDismiss: () -> Unit,
-    onConfirm: (hour: Int, minute: Int, remark: String, ringtoneUri: String?) -> Unit
+    onConfirm: (hour: Int, minute: Int, remark: String, ringtoneUri: String?, lockScreenEnabled: Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val calendar = java.util.Calendar.getInstance()
     var selectedHour by remember { mutableIntStateOf(calendar.get(java.util.Calendar.HOUR_OF_DAY)) }
     var selectedMinute by remember { mutableIntStateOf(calendar.get(java.util.Calendar.MINUTE)) }
     var remark by remember { mutableStateOf("") }
+    var lockScreenEnabled by remember { mutableStateOf(true) }
     var ringtoneUri by remember { mutableStateOf<String?>(null) }
     var timeChosen by remember { mutableStateOf(false) }
 
@@ -548,6 +578,40 @@ private fun AddAlarmDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // 锁屏闹钟开关
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = dialogLoc.lockScreenEnabledTitle,
+                                fontWeight = FontWeight.SemiBold,
+                                color = DarkBrand,
+                                fontSize = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = dialogLoc.lockScreenEnabledDesc,
+                                color = Color.Gray,
+                                fontSize = 12.sp
+                            )
+                        }
+                        Switch(
+                            checked = lockScreenEnabled,
+                            onCheckedChange = { lockScreenEnabled = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = ActiveColor,
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = Color(0xFFE2E2EA)
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     // 铃声选择按钮
                     val isRingtoneClickable = ringtoneSource != "built_in"
                     OutlinedButton(
@@ -598,7 +662,7 @@ private fun AddAlarmDialog(
             },
             confirmButton = {
                 Button(
-                    onClick = { onConfirm(selectedHour, selectedMinute, remark, ringtoneUri) },
+                    onClick = { onConfirm(selectedHour, selectedMinute, remark, ringtoneUri, lockScreenEnabled) },
                     colors = ButtonDefaults.buttonColors(containerColor = ActiveColor)
                 ) {
                     Text(dialogLoc.addBtn)

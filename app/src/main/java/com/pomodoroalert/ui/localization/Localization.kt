@@ -102,6 +102,17 @@ class LocalizationStrings(
     val autoStartTitle: String,
     val autoStartDesc: String,
     val autoStartBtn: String,
+    val lockScreenPermTitle: String,
+    val lockScreenPermDesc: String,
+    val lockScreenPermBtn: String,
+    val notificationsTitle: String,
+    val notificationsDesc: String,
+    val notificationsEnabled: String,
+    val notificationsDisabled: String,
+    val notificationsBtn: String,
+    val motivationalQuoteTitle: String,
+    val motivationalQuoteDesc: String,
+    val motivationalQuotePlaceholder: String,
     
     // StatsScreen
     val statsTitle: String,
@@ -124,7 +135,9 @@ class LocalizationStrings(
     val cancelBtn: String,
     val deleteAlarm: String,
     val newAlarmTitle: String,
-    val appTagline: String
+    val appTagline: String,
+    val lockScreenEnabledTitle: String,
+    val lockScreenEnabledDesc: String
 )
 
 val ZhStrings = LocalizationStrings(
@@ -209,6 +222,17 @@ val ZhStrings = LocalizationStrings(
     autoStartTitle = "自启动与后台管理",
     autoStartDesc = "在部分手机 (如 OPPO / 小米 / 华为等) 上，您需要手动允许应用「自启动」和「允许后台运行」，否则系统会强制杀死后台闹钟服务。",
     autoStartBtn = "去设置自启动",
+    lockScreenPermTitle = "锁屏显示与后台弹出权限",
+    lockScreenPermDesc = "在 OPPO / 一加 / 小米等设备上，锁屏唤醒必须开启「锁屏显示」和「后台弹出界面」权限。请点击下方按钮，进入权限管理并允许应用开启这两项权限。",
+    lockScreenPermBtn = "去授权锁屏与后台弹出",
+    notificationsTitle = "应用通知权限 (关键)",
+    notificationsDesc = "由于后台唤醒与锁屏通知依赖系统通知机制，若关闭此权限，闹钟触发时将无法响铃和弹出锁屏页面！",
+    notificationsEnabled = "通知权限已开启 (推荐)",
+    notificationsDisabled = "通知权限已关闭 (闹钟将完全失效！)",
+    notificationsBtn = "去开启通知权限",
+    motivationalQuoteTitle = "自定义锁屏鼓励寄语",
+    motivationalQuoteDesc = "设置一句能激励自己、调整心态的寄语，在闹钟响起、锁屏亮起时展示在屏幕上。",
+    motivationalQuotePlaceholder = "输入你的鼓励寄语，例如：今天又是充满希望的一天，加油！",
     
     statsTitle = "数据统计",
     todayPomodoros = "今日番茄",
@@ -229,7 +253,9 @@ val ZhStrings = LocalizationStrings(
     cancelBtn = "取消",
     deleteAlarm = "删除闹钟",
     newAlarmTitle = "新闹钟",
-    appTagline = "保持专注，高效生活"
+    appTagline = "保持专注，高效生活",
+    lockScreenEnabledTitle = "闹钟锁屏",
+    lockScreenEnabledDesc = "开启后，响铃时在锁屏界面弹出全屏提醒"
 )
 
 val EnStrings = LocalizationStrings(
@@ -314,6 +340,17 @@ val EnStrings = LocalizationStrings(
     autoStartTitle = "Auto-start & Background Management",
     autoStartDesc = "On some devices (OPPO, Xiaomi, Huawei, etc.), you must manually enable 'Auto-start' and 'Allow background running' for alarms to work reliably.",
     autoStartBtn = "Go to Auto-start Settings",
+    lockScreenPermTitle = "Lock Screen & Pop-up Permission",
+    lockScreenPermDesc = "On OPPO/OnePlus/Xiaomi, waking up lock screen requires 'Show on lock screen' and 'Display pop-up windows' permissions. Click below to grant permissions in settings.",
+    lockScreenPermBtn = "Grant Lock Screen Permissions",
+    notificationsTitle = "App Notification Permission (Critical)",
+    notificationsDesc = "Background alarm wakeups rely heavily on the system notification service. If notification permission is off, alarms will not ring or wake up the screen!",
+    notificationsEnabled = "Notifications enabled (Recommended)",
+    notificationsDisabled = "Notifications disabled (Alarms will fail!)",
+    notificationsBtn = "Enable Notifications",
+    motivationalQuoteTitle = "Custom Lock Screen Quote",
+    motivationalQuoteDesc = "Set an inspirational message to motivate you when the alarm screen pops up on your lock screen.",
+    motivationalQuotePlaceholder = "Enter your message, e.g., Today is a brand new day, go for it!",
     
     statsTitle = "Statistics",
     todayPomodoros = "Today's Pomos",
@@ -334,7 +371,9 @@ val EnStrings = LocalizationStrings(
     cancelBtn = "Cancel",
     deleteAlarm = "Delete Alarm",
     newAlarmTitle = "New Alarm",
-    appTagline = "Stay Focused, Live Efficiently"
+    appTagline = "Stay Focused, Live Efficiently",
+    lockScreenEnabledTitle = "Lock Screen Alarm",
+    lockScreenEnabledDesc = "Show full-screen alert when alarm rings on lock screen"
 )
 
 val LocalLocalization = staticCompositionLocalOf { ZhStrings }

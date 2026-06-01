@@ -15,5 +15,7 @@ data class AlarmEntity(
     val repeatDays: Int = 0,
     /** 自定义铃声 URI，null 表示使用系统默认闹钟铃声 */
     val ringtoneUri: String? = null,
+    /** 触发时是否弹出锁屏全屏界面 */
+    val lockScreenEnabled: Boolean = true,
     val createdAt: Long = System.currentTimeMillis()
 )

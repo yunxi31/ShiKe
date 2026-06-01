@@ -41,4 +41,11 @@ class SettingsViewModel @Inject constructor(
     fun setBuiltInRingtone(ringtone: String) {
         viewModelScope.launch { configRepo.setBuiltInRingtone(ringtone) }
     }
+
+    val motivationalQuote: StateFlow<String> = configRepo.motivationalQuote
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "今天又是充满希望的一天，加油！")
+
+    fun setMotivationalQuote(quote: String) {
+        viewModelScope.launch { configRepo.setMotivationalQuote(quote) }
+    }
 }

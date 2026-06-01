@@ -14,7 +14,17 @@ import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.pomodoroalert.MainActivity
 import com.pomodoroalert.data.TaskRepository
 import com.pomodoroalert.data.ConfigRepository
@@ -41,20 +51,24 @@ class AlarmWakeUpActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // 1. 调用系统 API (Android 8.0+)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
             val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as android.app.KeyguardManager
             keyguardManager.requestDismissKeyguard(this, null)
-        } else {
-            @Suppress("DEPRECATION")
-            window.addFlags(
-                android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                        or android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-                        or android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-            )
         }
-        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        
+        // 2. 备用并结合窗口 Flag，以兼容各定制系统 (如 ColorOS, MIUI 等)
+        @Suppress("DEPRECATION")
+        window.addFlags(
+            android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    or android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                    or android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                    or android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                    or android.view.WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
+        )
 
         val taskId = intent.getStringExtra("taskId")
         val isAlarm = intent.getBooleanExtra("isIndependentAlarm", false)
@@ -66,43 +80,144 @@ class AlarmWakeUpActivity : ComponentActivity() {
 
         setContent {
             MaterialTheme {
+                val quoteState = configRepo.motivationalQuote.collectAsState(initial = "今天又是充满希望的一天，加油！")
+                val customRemark = intent.getStringExtra("alarmRemark") ?: ""
+
+                val currentTime = remember { mutableStateOf("") }
+                val currentDate = remember { mutableStateOf("") }
+
+                LaunchedEffect(Unit) {
+                    while (true) {
+                        val calendar = java.util.Calendar.getInstance()
+                        currentTime.value = String.format("%02d:%02d", calendar.get(java.util.Calendar.HOUR_OF_DAY), calendar.get(java.util.Calendar.MINUTE))
+                        kotlinx.coroutines.delay(1000)
+                    }
+                }
+
+                LaunchedEffect(Unit) {
+                    val sdf = java.text.SimpleDateFormat("M月d日 EEEE", java.util.Locale.CHINA)
+                    currentDate.value = sdf.format(java.util.Date())
+                }
+
+                val backgroundGradient = Brush.verticalGradient(
+                    colors = listOf(Color(0xFF0F101A), Color(0xFF1B1D30))
+                )
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = Color.Black.copy(alpha = 0.8f) // 半透明黑色背景
+                    color = Color.Transparent
                 ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(backgroundGradient)
+                            .padding(horizontal = 24.dp, vertical = 56.dp)
                     ) {
-                        val isAlarm = intent.getBooleanExtra("isIndependentAlarm", false)
-                        val titleText = if (isAlarm) "闹钟提醒" else "时间到，请休息"
-                        val customRemark = intent.getStringExtra("alarmRemark")
-                        
-                        Text(
-                            text = titleText,
-                            style = MaterialTheme.typography.displayMedium,
-                            color = Color.White
-                        )
-                        if (isAlarm && !customRemark.isNullOrEmpty()) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = customRemark,
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = Color.White.copy(alpha = 0.8f)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(64.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Button(onClick = {
-                                handleComplete(taskId)
-                            }) {
-                                Text("完成")
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            // Top Clock Area
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(top = 40.dp)
+                            ) {
+                                Text(
+                                    text = currentTime.value,
+                                    fontSize = 76.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = currentDate.value,
+                                    fontSize = 16.sp,
+                                    color = Color.White.copy(alpha = 0.6f),
+                                    fontWeight = FontWeight.Medium
+                                )
                             }
-                            Button(onClick = {
-                                handlePostpone(taskId)
-                            }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)) {
-                                Text("推迟 10 分钟")
+
+                            // Middle Suggestion Card
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp)
+                            ) {
+                                Surface(
+                                    color = Color.White.copy(alpha = 0.08f),
+                                    shape = RoundedCornerShape(24.dp),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(24.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "“",
+                                            fontSize = 36.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF6C5DD3),
+                                            lineHeight = 20.sp
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = quoteState.value,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color.White,
+                                            textAlign = TextAlign.Center,
+                                            lineHeight = 26.sp
+                                        )
+                                        if (customRemark.isNotEmpty()) {
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                            Text(
+                                                text = "备注: $customRemark",
+                                                fontSize = 13.sp,
+                                                color = Color.White.copy(alpha = 0.5f),
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Bottom Actions
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 20.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Button(
+                                    onClick = { handlePostpone(taskId) },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(56.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.White.copy(alpha = 0.15f),
+                                        contentColor = Color.White
+                                    ),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Text("推迟 10 分钟", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                }
+
+                                Button(
+                                    onClick = { handleComplete(taskId) },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(56.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFFFF5252),
+                                        contentColor = Color.White
+                                    ),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Text("关闭闹钟", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }

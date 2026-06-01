@@ -19,6 +19,19 @@ object SystemPermissionHelper {
         }
     }
 
+    fun areNotificationsEnabled(context: Context): Boolean {
+        return androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
+    }
+
+    fun isChannelEnabled(context: Context, channelId: String): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            val channel = manager.getNotificationChannel(channelId)
+            return channel == null || channel.importance != android.app.NotificationManager.IMPORTANCE_NONE
+        }
+        return true
+    }
+
     fun requestIgnoreBatteryOptimizations(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
@@ -95,6 +108,10 @@ object SystemPermissionHelper {
         }
 
         // Fallback to app details
+        openAppDetailsSettings(context)
+    }
+
+    fun openAppDetailsSettings(context: Context) {
         try {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = Uri.parse("package:${context.packageName}")

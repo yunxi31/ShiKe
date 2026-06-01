@@ -38,7 +38,7 @@ class AlarmListViewModel @Inject constructor(
     val builtInRingtone: StateFlow<String> = configRepo.builtInRingtone
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "alert.mp3")
 
-    fun addAlarm(hour: Int, minute: Int, remark: String, ringtoneUri: String? = null) {
+    fun addAlarm(hour: Int, minute: Int, remark: String, ringtoneUri: String? = null, lockScreenEnabled: Boolean = true) {
         viewModelScope.launch {
             val alarmId = java.util.UUID.randomUUID().toString()
             val alarm = AlarmEntity(
@@ -46,7 +46,8 @@ class AlarmListViewModel @Inject constructor(
                 hour = hour,
                 minute = minute,
                 remark = remark,
-                ringtoneUri = ringtoneUri
+                ringtoneUri = ringtoneUri,
+                lockScreenEnabled = lockScreenEnabled
             )
             alarmDao.insert(alarm)
             scheduleSystemAlarm(alarm)
