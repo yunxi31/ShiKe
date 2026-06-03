@@ -15,6 +15,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.pomodoroalert.MainActivity
@@ -30,7 +31,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import java.util.Locale
 import javax.inject.Inject
+import kotlin.coroutines.resume
 
 @AndroidEntryPoint
 class AlarmService : Service() {
@@ -47,6 +50,8 @@ class AlarmService : Service() {
     @Inject lateinit var alarmDao: AlarmDao
 
     private var mediaPlayer: MediaPlayer? = null
+    private var tts: TextToSpeech? = null
+    private var ttsJob: Job? = null
     private val serviceScope = CoroutineScope(Dispatchers.Default + Job())
 
     override fun onCreate() {
@@ -57,22 +62,41 @@ class AlarmService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action
         if (action == ACTION_STOP_ALARM) {
+            stopAndReleaseResources()
             stopSelf()
             return START_NOT_STICKY
         }
 
+        stopAndReleaseResources()
+
         val alarmId = intent?.getStringExtra("alarmId")
         val remark = intent?.getStringExtra("alarmRemark") ?: "闹钟时间到了！"
         val ringtoneUri = intent?.getStringExtra("ringtoneUri")
+        val alarmType = intent?.getStringExtra("alarmType") ?: "REGULAR"
+        val voiceMode = intent?.getStringExtra("voiceMode") ?: "NONE"
+        val voiceText = intent?.getStringExtra("voiceText") ?: ""
+        val audioUri = intent?.getStringExtra("audioUri")
 
-        // 1. 立即在前台启动服务以满足 Android 12+ 后台限制，并提升进程优先级避免被 HANS 冻结
-        val lockScreenEnabled = intent?.getBooleanExtra("lockScreenEnabled", true) ?: true
-        val notification = buildNotification(alarmId, remark, ringtoneUri, lockScreenEnabled)
+        // 1. 立即在前台启动一个静音低优先级的常驻服务通知，以满足后台限制
+        val serviceNotification = NotificationCompat.Builder(this, "timer_service_channel")
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("闹钟服务")
+            .setContentText("闹钟后台运行中")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .build()
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+            startForeground(NOTIFICATION_ID, serviceNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         } else {
-            startForeground(NOTIFICATION_ID, notification)
+            startForeground(NOTIFICATION_ID, serviceNotification)
         }
+
+        val lockScreenEnabled = intent?.getBooleanExtra("lockScreenEnabled", true) ?: true
+        // 2. 发送独立的高优先级闹钟提示通知（非 ongoing 状态，可触发全屏 Intent 弹窗）
+        val alarmNotification = buildNotification(alarmId, remark, ringtoneUri, alarmType, lockScreenEnabled)
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(3002, alarmNotification)
 
         if (lockScreenEnabled) {
             // A. Acquire WakeLock with SCREEN_BRIGHT_WAKE_LOCK & ACQUIRE_CAUSES_WAKEUP to wake up screen
@@ -96,6 +120,7 @@ class AlarmService : Service() {
                 putExtra("isIndependentAlarm", true)
                 putExtra("alarmRemark", remark)
                 putExtra("alarmId", alarmId)
+                putExtra("alarmType", alarmType)
                 ringtoneUri?.let { putExtra("ringtoneUri", it) }
             }
             try {
@@ -103,6 +128,10 @@ class AlarmService : Service() {
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start AlarmWakeUpActivity directly from service", e)
             }
+        }
+
+        if (voiceMode == "TTS" && voiceText.isNotBlank()) {
+            startTtsLoop(voiceText)
         }
 
         // 2. 异步处理数据库状态更新与铃声播放，避免阻塞主线程
@@ -126,13 +155,18 @@ class AlarmService : Service() {
                 }
             }
 
-            playAlarmRingtoneAsync(ringtoneUri)
+            playAlarmRingtoneAsync(ringtoneUri, voiceMode, audioUri)
         }
 
         return START_STICKY
     }
 
-    private suspend fun playAlarmRingtoneAsync(customUri: String?) {
+    private suspend fun playAlarmRingtoneAsync(customUri: String?, voiceMode: String, audioUri: String?) {
+        if (voiceMode == "AUDIO" && !audioUri.isNullOrBlank()) {
+            playLocalRingtoneAsync(audioUri)
+            return
+        }
+
         val source = try {
             configRepo.ringtoneSource.first()
         } catch (e: Exception) {
@@ -226,10 +260,93 @@ class AlarmService : Service() {
         }
     }
 
+    private fun startTtsLoop(text: String) {
+        ttsJob?.cancel()
+        ttsJob = serviceScope.launch {
+            val initialized = initTtsSuspend()
+            if (initialized) {
+                while (true) {
+                    speakTts(text)
+                    kotlinx.coroutines.delay(8000L)
+                }
+            }
+        }
+    }
+
+    private suspend fun initTtsSuspend(): Boolean = withContext(Dispatchers.Main) {
+        kotlin.coroutines.suspendCoroutine { continuation ->
+            var resolved = false
+            val localTts = TextToSpeech(this@AlarmService) { status ->
+                if (status == TextToSpeech.SUCCESS) {
+                    if (!resolved) {
+                        resolved = true
+                        continuation.resume(true)
+                    }
+                } else {
+                    if (!resolved) {
+                        resolved = true
+                        continuation.resume(false)
+                    }
+                }
+            }
+            tts = localTts
+        }
+    }
+
+    private suspend fun speakTts(text: String) {
+        withContext(Dispatchers.Main) {
+            tts?.let { t ->
+                val result = t.setLanguage(Locale.CHINESE)
+                if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        val audioAttributes = AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .build()
+                        t.setAudioAttributes(audioAttributes)
+                    }
+                    t.speak(text, TextToSpeech.QUEUE_FLUSH, null, "AlarmSpeech")
+                }
+            }
+        }
+    }
+
+    private fun stopAndReleaseResources() {
+        try {
+            mediaPlayer?.let {
+                if (it.isPlaying) {
+                    it.stop()
+                }
+                it.release()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        mediaPlayer = null
+
+        try {
+            ttsJob?.cancel()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        ttsJob = null
+
+        try {
+            tts?.let {
+                it.stop()
+                it.shutdown()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        tts = null
+    }
+
     private fun buildNotification(
         alarmId: String?,
         remark: String,
         ringtoneUri: String?,
+        alarmType: String,
         lockScreenEnabled: Boolean = true
     ): Notification {
         val fullScreenIntent = Intent(this, AlarmWakeUpActivity::class.java).apply {
@@ -237,12 +354,13 @@ class AlarmService : Service() {
             putExtra("isIndependentAlarm", true)
             putExtra("alarmRemark", remark)
             putExtra("alarmId", alarmId)
+            putExtra("alarmType", alarmType)
             ringtoneUri?.let { putExtra("ringtoneUri", it) }
         }
 
         val bundle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             android.app.ActivityOptions.makeBasic()
-                .setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                .setPendingIntentCreatorBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
                 .toBundle()
         } else {
             null
@@ -280,7 +398,7 @@ class AlarmService : Service() {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setOngoing(true)
+            .setOngoing(false)
             .setSound(soundUri)
             .setVibrate(longArrayOf(0, 500, 500, 500)) // 必须有振动或声音才能触发全屏 Intent 悬浮窗
             .addAction(R.drawable.ic_notification, "关闭", stopPending)
@@ -320,16 +438,12 @@ class AlarmService : Service() {
 
     override fun onDestroy() {
         try {
-            mediaPlayer?.let {
-                if (it.isPlaying) {
-                    it.stop()
-                }
-                it.release()
-            }
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.cancel(3002)
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        mediaPlayer = null
+        stopAndReleaseResources()
         serviceScope.coroutineContext[Job]?.cancel()
         super.onDestroy()
     }

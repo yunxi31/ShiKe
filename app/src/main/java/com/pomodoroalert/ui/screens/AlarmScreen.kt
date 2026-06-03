@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -179,6 +180,9 @@ fun AlarmScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { navController.navigate("schedule") }) {
+                        Icon(Icons.Filled.CalendarToday, contentDescription = "作息提醒", tint = DarkBrand)
+                    }
                     IconButton(onClick = { showAddDialog = true }) {
                         Icon(Icons.Filled.Add, contentDescription = loc.addAlarm, tint = DarkBrand)
                     }
@@ -188,39 +192,45 @@ fun AlarmScreen(
                 )
             )
 
-            if (alarms.isEmpty()) {
-                // ── Empty state ──
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Rounded.NotificationsOff,
-                            contentDescription = null,
-                            modifier = Modifier.size(80.dp),
-                            tint = InactiveColor
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            "${loc.noAlarmsTitle}\n${loc.noAlarmsDesc}",
-                            color = Color.Gray,
-                            fontSize = 16.sp,
-                            textAlign = TextAlign.Center,
-                            lineHeight = 24.sp
-                        )
-                    }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                contentPadding = PaddingValues(vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // ── Schedule Reminder Banner ──
+                item {
+                    ScheduleReminderBanner(onClick = { navController.navigate("schedule") })
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    contentPadding = PaddingValues(vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
+
+                if (alarms.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 64.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    Icons.Rounded.NotificationsOff,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(80.dp),
+                                    tint = InactiveColor
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    "${loc.noAlarmsTitle}\n${loc.noAlarmsDesc}",
+                                    color = Color.Gray,
+                                    fontSize = 16.sp,
+                                    textAlign = TextAlign.Center,
+                                    lineHeight = 24.sp
+                                )
+                            }
+                        }
+                    }
+                } else {
                     items(alarms, key = { it.alarmId }) { alarm ->
                         AlarmCard(
                             alarm = alarm,
@@ -325,17 +335,36 @@ private fun AlarmCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     // Time display (clickable to change)
-                    Text(
-                        text = String.format("%02d:%02d", alarm.hour, alarm.minute),
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (alarm.isEnabled) DarkBrand else Color(0xFF808191).copy(alpha = 0.6f),
-                        letterSpacing = 1.sp,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { onTimeClick() }
-                            .padding(horizontal = 4.dp, vertical = 2.dp)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = String.format("%02d:%02d", alarm.hour, alarm.minute),
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (alarm.isEnabled) DarkBrand else Color(0xFF808191).copy(alpha = 0.6f),
+                            letterSpacing = 1.sp,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onTimeClick() }
+                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                        )
+                        if (alarm.alarmType == "SCHEDULE") {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(ActiveColor.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "作息",
+                                    color = ActiveColor,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
 
                     Switch(
                         checked = alarm.isEnabled,
@@ -358,6 +387,42 @@ private fun AlarmCard(
                         fontWeight = FontWeight.Medium,
                         color = if (alarm.isEnabled) DarkBrand else Color(0xFF808191).copy(alpha = 0.6f)
                     )
+                }
+
+                // ── Schedule details (TTS/Audio info) ──
+                if (alarm.alarmType == "SCHEDULE") {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.NotificationsActive,
+                            contentDescription = null,
+                            tint = ActiveColor,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        val infoText = when (alarm.voiceMode) {
+                            "TTS" -> "语音播报: \"${alarm.voiceText}\""
+                            "AUDIO" -> {
+                                val fileName = if (alarm.audioUri?.contains("|") == true) {
+                                    alarm.audioUri.split("|")[1]
+                                } else {
+                                    "自定义录音"
+                                }
+                                "语音播报: $fileName"
+                            }
+                            else -> "仅响铃"
+                        }
+                        Text(
+                            text = infoText,
+                            fontSize = 12.sp,
+                            color = ActiveColor.copy(alpha = 0.8f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
 
                 // ── Lock Screen Setting Row ──
@@ -718,3 +783,98 @@ private fun EditRemarkDialog(
         shape = RoundedCornerShape(24.dp)
     )
 }
+
+// ── Schedule Reminder Banner Card ──
+@Composable
+fun ScheduleReminderBanner(onClick: () -> Unit) {
+    val loc = LocalLocalization.current
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .shadow(4.dp, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+    ) {
+        Box(
+            modifier = Modifier
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(Color(0xFF6C5DD3), Color(0xFF8B7CF0))
+                    )
+                )
+                .padding(20.dp)
+        ) {
+            Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CalendarToday,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = loc.scheduleBannerTitle,
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .background(Color.White.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "New",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = loc.scheduleBannerDesc,
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Button(
+                        onClick = onClick,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = Color(0xFF6C5DD3)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = loc.scheduleBannerBtn,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+

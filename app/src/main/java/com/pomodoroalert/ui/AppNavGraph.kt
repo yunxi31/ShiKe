@@ -14,6 +14,7 @@ import com.pomodoroalert.ui.screens.StatsScreen
 import com.pomodoroalert.ui.screens.SettingsScreen
 import com.pomodoroalert.ui.screens.AlarmScreen
 import com.pomodoroalert.ui.screens.SplashScreen
+import com.pomodoroalert.ui.screens.ScheduleScreen
 import com.pomodoroalert.ui.viewmodel.SettingsViewModel
 import com.pomodoroalert.ui.localization.ProvideLocalization
 
@@ -51,6 +52,7 @@ fun AppNavGraph() {
             composable("stats") { StatsScreen(navController) }
             composable("settings") { SettingsScreen(navController) }
             composable("alarm") { AlarmScreen(navController) }
+            composable("schedule") { ScheduleScreen(navController) }
         }
     }
 }

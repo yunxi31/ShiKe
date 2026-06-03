@@ -137,7 +137,10 @@ class LocalizationStrings(
     val newAlarmTitle: String,
     val appTagline: String,
     val lockScreenEnabledTitle: String,
-    val lockScreenEnabledDesc: String
+    val lockScreenEnabledDesc: String,
+    val scheduleBannerTitle: String,
+    val scheduleBannerDesc: String,
+    val scheduleBannerBtn: String
 )
 
 val ZhStrings = LocalizationStrings(
@@ -255,7 +258,10 @@ val ZhStrings = LocalizationStrings(
     newAlarmTitle = "新闹钟",
     appTagline = "保持专注，高效生活",
     lockScreenEnabledTitle = "闹钟锁屏",
-    lockScreenEnabledDesc = "开启后，响铃时在锁屏界面弹出全屏提醒"
+    lockScreenEnabledDesc = "开启后，响铃时在锁屏界面弹出全屏提醒",
+    scheduleBannerTitle = "智能作息提醒",
+    scheduleBannerDesc = "导入您的连续作息日程表，一键智能批量设定各项作息的起止闹钟与自定义语音播报。",
+    scheduleBannerBtn = "立即设置"
 )
 
 val EnStrings = LocalizationStrings(
@@ -373,7 +379,10 @@ val EnStrings = LocalizationStrings(
     newAlarmTitle = "New Alarm",
     appTagline = "Stay Focused, Live Efficiently",
     lockScreenEnabledTitle = "Lock Screen Alarm",
-    lockScreenEnabledDesc = "Show full-screen alert when alarm rings on lock screen"
+    lockScreenEnabledDesc = "Show full-screen alert when alarm rings on lock screen",
+    scheduleBannerTitle = "Smart Schedule Reminders",
+    scheduleBannerDesc = "Import your schedule Markdown, and batch-set start/end alarms with custom voice text/audio in one click.",
+    scheduleBannerBtn = "Set Now"
 )
 
 val LocalLocalization = staticCompositionLocalOf { ZhStrings }

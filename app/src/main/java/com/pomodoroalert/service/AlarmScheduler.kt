@@ -20,6 +20,10 @@ object AlarmScheduler {
             putExtra("alarmRemark", alarm.remark.ifBlank { "闹钟时间到了！" })
             alarm.ringtoneUri?.let { putExtra("ringtoneUri", it) }
             putExtra("lockScreenEnabled", alarm.lockScreenEnabled)
+            putExtra("alarmType", alarm.alarmType)
+            putExtra("voiceMode", alarm.voiceMode)
+            putExtra("voiceText", alarm.voiceText)
+            alarm.audioUri?.let { putExtra("audioUri", it) }
         }
         val requestCode = alarm.alarmId.hashCode() and 0x7FFFFFFF
 

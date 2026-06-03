@@ -70,6 +70,17 @@ class AlarmWakeUpActivity : ComponentActivity() {
                     or android.view.WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
         )
 
+        setupAlarmAndCompose()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        stopAlarm()
+        setupAlarmAndCompose()
+    }
+
+    private fun setupAlarmAndCompose() {
         val taskId = intent.getStringExtra("taskId")
         val isAlarm = intent.getBooleanExtra("isIndependentAlarm", false)
         
@@ -79,9 +90,13 @@ class AlarmWakeUpActivity : ComponentActivity() {
         }
 
         setContent {
+            val taskId = intent.getStringExtra("taskId")
+            val isAlarm = intent.getBooleanExtra("isIndependentAlarm", false)
+            val alarmType = intent.getStringExtra("alarmType") ?: "REGULAR"
+            val isSchedule = alarmType == "SCHEDULE"
+            val customRemark = intent.getStringExtra("alarmRemark") ?: ""
             MaterialTheme {
                 val quoteState = configRepo.motivationalQuote.collectAsState(initial = "今天又是充满希望的一天，加油！")
-                val customRemark = intent.getStringExtra("alarmRemark") ?: ""
 
                 val currentTime = remember { mutableStateOf("") }
                 val currentDate = remember { mutableStateOf("") }
@@ -191,18 +206,20 @@ class AlarmWakeUpActivity : ComponentActivity() {
                                     .padding(bottom = 20.dp),
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Button(
-                                    onClick = { handlePostpone(taskId) },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(56.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color.White.copy(alpha = 0.15f),
-                                        contentColor = Color.White
-                                    ),
-                                    shape = RoundedCornerShape(16.dp)
-                                ) {
-                                    Text("推迟 10 分钟", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                if (!isSchedule) {
+                                    Button(
+                                        onClick = { handlePostpone(taskId) },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(56.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.White.copy(alpha = 0.15f),
+                                            contentColor = Color.White
+                                        ),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ) {
+                                        Text("推迟 10 分钟", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                    }
                                 }
 
                                 Button(

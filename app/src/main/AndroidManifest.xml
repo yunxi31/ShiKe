@@ -54,6 +54,7 @@
             android:foregroundServiceType="mediaPlayback" />
         <service
             android:name=".service.AlarmService"
+            android:exported="true"
             android:foregroundServiceType="mediaPlayback" />
         <receiver
             android:name=".receiver.ExactAlarmReceiver"

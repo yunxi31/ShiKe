@@ -14,6 +14,18 @@ interface AlarmDao {
     @Query("SELECT * FROM alarms ORDER BY hour ASC, minute ASC")
     fun getAllAlarms(): Flow<List<AlarmEntity>>
 
+    @Query("SELECT * FROM alarms WHERE alarmType = 'REGULAR' ORDER BY hour ASC, minute ASC")
+    fun getRegularAlarms(): Flow<List<AlarmEntity>>
+
+    @Query("SELECT * FROM alarms WHERE alarmType = 'SCHEDULE' ORDER BY hour ASC, minute ASC")
+    fun getScheduleAlarms(): Flow<List<AlarmEntity>>
+
+    @Query("SELECT * FROM alarms WHERE alarmType = 'SCHEDULE' ORDER BY hour ASC, minute ASC")
+    suspend fun getScheduleAlarmsOnce(): List<AlarmEntity>
+
+    @Query("DELETE FROM alarms WHERE alarmType = 'SCHEDULE'")
+    suspend fun deleteScheduleAlarms()
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(alarm: AlarmEntity)
 

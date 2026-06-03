@@ -17,5 +17,13 @@ data class AlarmEntity(
     val ringtoneUri: String? = null,
     /** 触发时是否弹出锁屏全屏界面 */
     val lockScreenEnabled: Boolean = true,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    /** 闹钟类型: "REGULAR" 表示普通闹钟，"SCHEDULE" 表示作息闹钟 */
+    val alarmType: String = "REGULAR",
+    /** 语音模式: "NONE", "TTS", "AUDIO" */
+    val voiceMode: String = "NONE",
+    /** TTS 朗读文字 */
+    val voiceText: String = "",
+    /** 用户自定义语音文件 URI */
+    val audioUri: String? = null
 )

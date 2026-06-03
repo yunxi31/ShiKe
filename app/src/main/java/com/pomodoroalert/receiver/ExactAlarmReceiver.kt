@@ -50,7 +50,7 @@ class ExactAlarmReceiver : BroadcastReceiver() {
         // 3. Show high-priority full-screen notification using the alarm channel
         val bundle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             android.app.ActivityOptions.makeBasic()
-                .setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                .setPendingIntentCreatorBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
                 .toBundle()
         } else {
             null
