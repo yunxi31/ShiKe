@@ -47,7 +47,15 @@ class TimerService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        startForeground(notificationId, buildNotification(0L))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                notificationId,
+                buildNotification(0L),
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+            )
+        } else {
+            startForeground(notificationId, buildNotification(0L))
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -92,7 +100,38 @@ class TimerService : Service() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             pendingTaskId?.let { putExtra("taskId", it) }
         }
-        startActivity(alarmIntent)
+        val creatorOptions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            android.app.ActivityOptions.makeBasic().apply {
+                setPendingIntentCreatorBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+            }.toBundle()
+        } else {
+            null
+        }
+        val pendingDirect = PendingIntent.getActivity(
+            this,
+            2006,
+            alarmIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or
+                    (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0),
+            creatorOptions
+        )
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                val senderOptions = android.app.ActivityOptions.makeBasic().apply {
+                    setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                }.toBundle()
+                pendingDirect.send(this, 0, null, null, null, null, senderOptions)
+            } else {
+                pendingDirect.send()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start AlarmWakeUpActivity via PendingIntent from TimerService", e)
+            try {
+                startActivity(alarmIntent)
+            } catch (ex: Exception) {
+                Log.e(TAG, "Failed to start AlarmWakeUpActivity directly from TimerService fallback", ex)
+            }
+        }
     }
 
     private fun playAlertSound() {

@@ -21,6 +21,26 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // 请求悬浮窗权限，保障 Android 14 后台 Activity 启动
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            if (!android.provider.Settings.canDrawOverlays(this)) {
+                try {
+                    val intent = android.content.Intent(
+                        android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        android.net.Uri.parse("package:$packageName")
+                    )
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    try {
+                        val intent = android.content.Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+                        startActivity(intent)
+                    } catch (ex: Exception) {
+                        android.util.Log.e("MainActivity", "Failed to start manage overlay settings", ex)
+                    }
+                }
+            }
+        }
+
         setContent {
             MaterialTheme {
                 Surface {

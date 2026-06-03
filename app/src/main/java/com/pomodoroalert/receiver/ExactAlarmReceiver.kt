@@ -41,10 +41,37 @@ class ExactAlarmReceiver : BroadcastReceiver() {
         val fullScreenIntent = Intent(context, com.pomodoroalert.ui.AlarmWakeUpActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
+        val creatorOptions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            android.app.ActivityOptions.makeBasic().apply {
+                setPendingIntentCreatorBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+            }.toBundle()
+        } else {
+            null
+        }
+        val pendingDirect = PendingIntent.getActivity(
+            context,
+            2004,
+            fullScreenIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or
+                    (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0),
+            creatorOptions
+        )
         try {
-            context.startActivity(fullScreenIntent)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                val senderOptions = android.app.ActivityOptions.makeBasic().apply {
+                    setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                }.toBundle()
+                pendingDirect.send(context, 0, null, null, null, null, senderOptions)
+            } else {
+                pendingDirect.send()
+            }
         } catch (e: Exception) {
             e.printStackTrace()
+            try {
+                context.startActivity(fullScreenIntent)
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
         }
 
         // 3. Show high-priority full-screen notification using the alarm channel

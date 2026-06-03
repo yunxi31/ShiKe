@@ -123,10 +123,37 @@ class AlarmService : Service() {
                 putExtra("alarmType", alarmType)
                 ringtoneUri?.let { putExtra("ringtoneUri", it) }
             }
+            val creatorOptions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                android.app.ActivityOptions.makeBasic().apply {
+                    setPendingIntentCreatorBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                }.toBundle()
+            } else {
+                null
+            }
+            val pendingDirect = PendingIntent.getActivity(
+                this,
+                2005,
+                fullScreenIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or
+                        (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0),
+                creatorOptions
+            )
             try {
-                startActivity(fullScreenIntent)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    val senderOptions = android.app.ActivityOptions.makeBasic().apply {
+                        setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                    }.toBundle()
+                    pendingDirect.send(this, 0, null, null, null, null, senderOptions)
+                } else {
+                    pendingDirect.send()
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to start AlarmWakeUpActivity directly from service", e)
+                Log.e(TAG, "Failed to start AlarmWakeUpActivity via PendingIntent from service", e)
+                try {
+                    startActivity(fullScreenIntent)
+                } catch (ex: Exception) {
+                    Log.e(TAG, "Failed to start AlarmWakeUpActivity directly from service fallback", ex)
+                }
             }
         }
 
@@ -261,53 +288,162 @@ class AlarmService : Service() {
     }
 
     private fun startTtsLoop(text: String) {
+        Log.d(TAG, "startTtsLoop: starting TTS loop with text: $text")
         ttsJob?.cancel()
         ttsJob = serviceScope.launch {
             val initialized = initTtsSuspend()
+            Log.d(TAG, "startTtsLoop: initTtsSuspend returned: $initialized")
             if (initialized) {
                 while (true) {
                     speakTts(text)
                     kotlinx.coroutines.delay(8000L)
                 }
+            } else {
+                Log.e(TAG, "startTtsLoop: TTS failed to initialize")
             }
         }
     }
 
     private suspend fun initTtsSuspend(): Boolean = withContext(Dispatchers.Main) {
+        Log.d(TAG, "initTtsSuspend: creating TextToSpeech instance using applicationContext")
         kotlin.coroutines.suspendCoroutine { continuation ->
             var resolved = false
-            val localTts = TextToSpeech(this@AlarmService) { status ->
-                if (status == TextToSpeech.SUCCESS) {
-                    if (!resolved) {
-                        resolved = true
-                        continuation.resume(true)
-                    }
-                } else {
-                    if (!resolved) {
-                        resolved = true
-                        continuation.resume(false)
+            try {
+                var localTts: TextToSpeech? = null
+                localTts = TextToSpeech(applicationContext) { status ->
+                    Log.d(TAG, "TextToSpeech init callback status: $status")
+                    if (status == TextToSpeech.SUCCESS) {
+                        localTts?.let { t ->
+                            try {
+                                Log.d(TAG, "Default TTS engine: ${t.defaultEngine}")
+                                for (eng in t.engines) {
+                                    Log.d(TAG, "Available Engine: name=${eng.name}, label=${eng.label}")
+                                }
+                                val voices = t.voices
+                                if (voices != null) {
+                                    Log.d(TAG, "Voices count: ${voices.size}")
+                                    for (voice in voices) {
+                                        val loc = voice.locale
+                                        Log.d(TAG, "Voice: ${voice.name}, localeStr: $loc, lang: ${loc?.language}, country: ${loc?.country}, variant: ${loc?.variant}, tag: ${loc?.toLanguageTag()}")
+                                    }
+                                } else {
+                                    Log.d(TAG, "Voices set is null")
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error logging engines/voices info", e)
+                            }
+                        }
+                        if (!resolved) {
+                            resolved = true
+                            continuation.resume(true)
+                        }
+                    } else {
+                        Log.e(TAG, "TextToSpeech init failed with status: $status")
+                        if (!resolved) {
+                            resolved = true
+                            continuation.resume(false)
+                        }
                     }
                 }
+                tts = localTts
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception during TextToSpeech creation", e)
+                if (!resolved) {
+                    resolved = true
+                    continuation.resume(false)
+                }
             }
-            tts = localTts
         }
     }
 
     private suspend fun speakTts(text: String) {
         withContext(Dispatchers.Main) {
+            Log.d(TAG, "speakTts: attempting to speak text: $text")
             tts?.let { t ->
-                val result = t.setLanguage(Locale.CHINESE)
-                if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        val audioAttributes = AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_ALARM)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                            .build()
-                        t.setAudioAttributes(audioAttributes)
+                var langSupported = false
+
+                // 0. 检查当前引擎语言是否已经是中文
+                try {
+                    val currentLocale = t.language
+                    Log.d(TAG, "speakTts: current locale = $currentLocale, language = ${currentLocale?.language}")
+                    if (currentLocale != null) {
+                        val lang = currentLocale.language
+                        if (lang.equals("zh", ignoreCase = true) || 
+                            lang.equals("chn", ignoreCase = true) || 
+                            lang.equals("zho", ignoreCase = true) || 
+                            currentLocale.toString().contains("zh", ignoreCase = true) ||
+                            currentLocale.toString().contains("chn", ignoreCase = true)) {
+                            Log.d(TAG, "speakTts: Current locale is already Chinese, skipping setup.")
+                            langSupported = true
+                        }
                     }
-                    t.speak(text, TextToSpeech.QUEUE_FLUSH, null, "AlarmSpeech")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error checking current locale", e)
                 }
-            }
+
+                // 1. 尝试使用 voices 列表匹配中文发音人
+                if (!langSupported) {
+                    try {
+                        val voices = t.voices
+                        if (!voices.isNullOrEmpty()) {
+                            val chineseVoice = voices.firstOrNull { voice ->
+                                voice.name.contains("中文") || 
+                                voice.name.contains("Chinese", ignoreCase = true) ||
+                                voice.locale.language.equals("zh", ignoreCase = true) ||
+                                voice.locale.language.equals("chn", ignoreCase = true) ||
+                                voice.locale.country.equals("chn", ignoreCase = true) ||
+                                voice.locale.toString().contains("chn", ignoreCase = true) ||
+                                voice.locale.toString().contains("zh", ignoreCase = true)
+                            }
+                            if (chineseVoice != null) {
+                                Log.d(TAG, "speakTts: found Chinese voice: ${chineseVoice.name}, locale: ${chineseVoice.locale}, setting it.")
+                                val setVoiceResult = t.setVoice(chineseVoice)
+                                Log.d(TAG, "speakTts: setVoice result = $setVoiceResult")
+                                if (setVoiceResult == TextToSpeech.SUCCESS) {
+                                    langSupported = true
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error setting TTS voice", e)
+                    }
+                }
+
+                // 2. 如果 setVoice 失败或不支持，尝试通过 Locale 列表设置
+                if (!langSupported) {
+                    val localesToTry = listOf(
+                        Locale.getDefault(),
+                        Locale.SIMPLIFIED_CHINESE,
+                        Locale.CHINA,
+                        Locale.CHINESE,
+                        Locale("zh", "CN"),
+                        Locale("chn"),
+                        Locale("zh"),
+                        Locale("zh", "HK"),
+                        Locale("zh", "TW")
+                    )
+                    for (loc in localesToTry) {
+                        val result = t.setLanguage(loc)
+                        Log.d(TAG, "speakTts: setLanguage(${loc}) result = $result")
+                        if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
+                            langSupported = true
+                            break
+                        }
+                    }
+                }
+
+                if (!langSupported) {
+                    Log.w(TAG, "speakTts: Chinese language setup failed. Attempting fallback speak with default engine language.")
+                }
+
+                val audioAttributes = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build()
+                t.setAudioAttributes(audioAttributes)
+                val speakResult = t.speak(text, TextToSpeech.QUEUE_FLUSH, null, "AlarmSpeech")
+                Log.d(TAG, "speakTts: speak command returned: $speakResult")
+            } ?: Log.e(TAG, "speakTts: tts instance is null")
         }
     }
 
