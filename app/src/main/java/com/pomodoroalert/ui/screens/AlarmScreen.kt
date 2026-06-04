@@ -167,6 +167,17 @@ fun AlarmScreen(
     }
     val loc = LocalLocalization.current
 
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val tabTitles = listOf("普通闹钟", "作息提醒")
+
+    val filteredAlarms = remember(alarms, selectedTabIndex) {
+        if (selectedTabIndex == 0) {
+            alarms.filter { it.alarmType == "REGULAR" }
+        } else {
+            alarms.filter { it.alarmType == "SCHEDULE" }
+        }
+    }
+
     Surface(modifier = Modifier.fillMaxSize(), color = PageBg) {
         Column(modifier = Modifier.fillMaxSize()) {
             // ── Top Bar ──
@@ -180,17 +191,43 @@ fun AlarmScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { navController.navigate("schedule") }) {
-                        Icon(Icons.Filled.CalendarToday, contentDescription = "作息提醒", tint = DarkBrand)
-                    }
-                    IconButton(onClick = { showAddDialog = true }) {
-                        Icon(Icons.Filled.Add, contentDescription = loc.addAlarm, tint = DarkBrand)
+                    if (selectedTabIndex == 0) {
+                        IconButton(onClick = { showAddDialog = true }) {
+                            Icon(Icons.Filled.Add, contentDescription = loc.addAlarm, tint = DarkBrand)
+                        }
+                    } else {
+                        IconButton(onClick = { navController.navigate("schedule") }) {
+                            Icon(Icons.Filled.CalendarToday, contentDescription = "作息提醒", tint = DarkBrand)
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color.Transparent
                 )
             )
+
+            // ── Tab Tabs ──
+            TabRow(
+                selectedTabIndex = selectedTabIndex,
+                containerColor = Color.Transparent,
+                contentColor = ActiveColor,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            ) {
+                tabTitles.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = {
+                            Text(
+                                text = title,
+                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 15.sp,
+                                color = if (selectedTabIndex == index) ActiveColor else LightBrand
+                            )
+                        }
+                    )
+                }
+            }
 
             LazyColumn(
                 modifier = Modifier
@@ -200,11 +237,13 @@ fun AlarmScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // ── Schedule Reminder Banner ──
-                item {
-                    ScheduleReminderBanner(onClick = { navController.navigate("schedule") })
+                if (selectedTabIndex == 1) {
+                    item {
+                        ScheduleReminderBanner(onClick = { navController.navigate("schedule") })
+                    }
                 }
 
-                if (alarms.isEmpty()) {
+                if (filteredAlarms.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier
@@ -221,7 +260,11 @@ fun AlarmScreen(
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    "${loc.noAlarmsTitle}\n${loc.noAlarmsDesc}",
+                                    if (selectedTabIndex == 0) {
+                                        "${loc.noAlarmsTitle}\n${loc.noAlarmsDesc}"
+                                    } else {
+                                        "暂无作息提醒\n点击上方卡片编写你的作息表"
+                                    },
                                     color = Color.Gray,
                                     fontSize = 16.sp,
                                     textAlign = TextAlign.Center,
@@ -231,7 +274,7 @@ fun AlarmScreen(
                         }
                     }
                 } else {
-                    items(alarms, key = { it.alarmId }) { alarm ->
+                    items(filteredAlarms, key = { it.alarmId }) { alarm ->
                         AlarmCard(
                             alarm = alarm,
                             ringtoneSource = ringtoneSource,
