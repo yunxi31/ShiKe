@@ -240,6 +240,9 @@ fun AlarmScreen(
                             onLockScreenToggle = { checked ->
                                 viewModel.updateAlarm(alarm.copy(lockScreenEnabled = checked))
                             },
+                            onRingtoneEnabledToggle = { checked ->
+                                viewModel.updateAlarm(alarm.copy(ringtoneEnabled = checked))
+                            },
                             onEdit = { editingAlarm = alarm },
                             onDelete = { viewModel.deleteAlarm(alarm) },
                             onTimeClick = {
@@ -310,6 +313,7 @@ private fun AlarmCard(
     builtInRingtone: String,
     onToggle: () -> Unit,
     onLockScreenToggle: (Boolean) -> Unit,
+    onRingtoneEnabledToggle: (Boolean) -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onTimeClick: () -> Unit,
@@ -441,6 +445,30 @@ private fun AlarmCard(
                     Switch(
                         checked = alarm.lockScreenEnabled,
                         onCheckedChange = { onLockScreenToggle(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = ActiveColor,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color(0xFFE2E2EA)
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "同时播放闹铃铃声",
+                        fontSize = 14.sp,
+                        color = if (alarm.isEnabled) DarkBrand else Color(0xFF808191).copy(alpha = 0.6f)
+                    )
+                    Switch(
+                        checked = alarm.ringtoneEnabled,
+                        onCheckedChange = { onRingtoneEnabledToggle(it) },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
                             checkedTrackColor = ActiveColor,

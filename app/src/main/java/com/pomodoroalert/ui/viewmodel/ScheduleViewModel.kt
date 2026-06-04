@@ -26,7 +26,10 @@ data class ScheduleDraft(
     val voiceMode: String = "TTS",
     val voiceText: String = "",
     val audioUri: String? = null,
-    val audioFileName: String? = null
+    val audioFileName: String? = null,
+    val lockScreenEnabled: Boolean = false,
+    val isEnabled: Boolean = true,
+    val ringtoneEnabled: Boolean = false
 )
 
 @HiltViewModel
@@ -125,15 +128,19 @@ class ScheduleViewModel @Inject constructor(
                     hour = draft.startHour,
                     minute = draft.startMinute,
                     remark = draft.content,
-                    isEnabled = true,
+                    isEnabled = draft.isEnabled,
                     repeatDays = 127, // Repeat every day
                     alarmType = "SCHEDULE",
                     voiceMode = draft.voiceMode,
                     voiceText = draft.voiceText,
-                    audioUri = draft.audioUri
+                    audioUri = draft.audioUri,
+                    lockScreenEnabled = draft.lockScreenEnabled,
+                    ringtoneEnabled = draft.ringtoneEnabled
                 )
                 alarmDao.insert(alarm)
-                AlarmScheduler.scheduleAlarm(context, alarm)
+                if (alarm.isEnabled) {
+                    AlarmScheduler.scheduleAlarm(context, alarm)
+                }
             }
 
             // 4. Save raw markdown text to SharedPreferences
@@ -183,6 +190,9 @@ class ScheduleViewModel @Inject constructor(
                 var voiceText = currentMatch?.voiceText ?: defaultVoiceText
                 var audioUri = currentMatch?.audioUri
                 var audioFileName = currentMatch?.audioFileName
+                var lockScreenEnabled = currentMatch?.lockScreenEnabled ?: false
+                var isEnabled = currentMatch?.isEnabled ?: true
+                var ringtoneEnabled = currentMatch?.ringtoneEnabled ?: false
                 
                 // 2. If not found in memory drafts and useSavedCustomizations is true, try to find in database saved alarms
                 if (currentMatch == null && useSavedCustomizations) {
@@ -191,6 +201,9 @@ class ScheduleViewModel @Inject constructor(
                         voiceMode = existing.voiceMode
                         voiceText = existing.voiceText.ifBlank { defaultVoiceText }
                         audioUri = existing.audioUri
+                        lockScreenEnabled = existing.lockScreenEnabled
+                        isEnabled = existing.isEnabled
+                        ringtoneEnabled = existing.ringtoneEnabled
                         if (audioUri != null && audioUri.contains("|")) {
                             audioFileName = audioUri.split("|").getOrNull(1)
                         }
@@ -207,7 +220,10 @@ class ScheduleViewModel @Inject constructor(
                         voiceMode = voiceMode,
                         voiceText = voiceText,
                         audioUri = audioUri,
-                        audioFileName = audioFileName
+                        audioFileName = audioFileName,
+                        lockScreenEnabled = lockScreenEnabled,
+                        isEnabled = isEnabled,
+                        ringtoneEnabled = ringtoneEnabled
                     )
                 )
             }
@@ -295,15 +311,19 @@ class ScheduleViewModel @Inject constructor(
                         hour = draft.startHour,
                         minute = draft.startMinute,
                         remark = draft.content,
-                        isEnabled = true,
+                        isEnabled = draft.isEnabled,
                         repeatDays = 127, // Repeat every day of week (Monday to Sunday)
                         alarmType = "SCHEDULE",
                         voiceMode = draft.voiceMode,
                         voiceText = draft.voiceText,
-                        audioUri = draft.audioUri
+                        audioUri = draft.audioUri,
+                        lockScreenEnabled = draft.lockScreenEnabled,
+                        ringtoneEnabled = draft.ringtoneEnabled
                     )
                     alarmDao.insert(alarm)
-                    AlarmScheduler.scheduleAlarm(context, alarm)
+                    if (alarm.isEnabled) {
+                        AlarmScheduler.scheduleAlarm(context, alarm)
+                    }
                 }
 
                 // 4. Save raw markdown text to SharedPreferences
@@ -340,8 +360,44 @@ class ScheduleViewModel @Inject constructor(
             if (matchingAlarm.voiceText != draft.voiceText) return true
             if (matchingAlarm.audioUri != draft.audioUri) return true
             if (matchingAlarm.remark != draft.content) return true
+            if (matchingAlarm.lockScreenEnabled != draft.lockScreenEnabled) return true
+            if (matchingAlarm.isEnabled != draft.isEnabled) return true
+            if (matchingAlarm.ringtoneEnabled != draft.ringtoneEnabled) return true
         }
 
         return false
+    }
+
+    fun updateDraftLockScreenEnabled(draftId: String, enabled: Boolean) {
+        _drafts.value = _drafts.value.map {
+            if (it.id == draftId) {
+                it.copy(lockScreenEnabled = enabled)
+            } else {
+                it
+            }
+        }
+        triggerImmediateAutoSave()
+    }
+
+    fun updateDraftEnabled(draftId: String, enabled: Boolean) {
+        _drafts.value = _drafts.value.map {
+            if (it.id == draftId) {
+                it.copy(isEnabled = enabled)
+            } else {
+                it
+            }
+        }
+        triggerImmediateAutoSave()
+    }
+
+    fun updateDraftRingtoneEnabled(draftId: String, enabled: Boolean) {
+        _drafts.value = _drafts.value.map {
+            if (it.id == draftId) {
+                it.copy(ringtoneEnabled = enabled)
+            } else {
+                it
+            }
+        }
+        triggerImmediateAutoSave()
     }
 }

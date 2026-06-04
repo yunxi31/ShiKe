@@ -76,6 +76,7 @@ class AlarmService : Service() {
         val voiceMode = intent?.getStringExtra("voiceMode") ?: "NONE"
         val voiceText = intent?.getStringExtra("voiceText") ?: ""
         val audioUri = intent?.getStringExtra("audioUri")
+        val ringtoneEnabled = intent?.getBooleanExtra("ringtoneEnabled", true) ?: true
 
         // 1. 立即在前台启动一个静音低优先级的常驻服务通知，以满足后台限制
         val serviceNotification = NotificationCompat.Builder(this, "timer_service_channel")
@@ -182,15 +183,19 @@ class AlarmService : Service() {
                 }
             }
 
-            playAlarmRingtoneAsync(ringtoneUri, voiceMode, audioUri)
+            playAlarmRingtoneAsync(ringtoneUri, voiceMode, audioUri, ringtoneEnabled)
         }
 
         return START_STICKY
     }
 
-    private suspend fun playAlarmRingtoneAsync(customUri: String?, voiceMode: String, audioUri: String?) {
+    private suspend fun playAlarmRingtoneAsync(customUri: String?, voiceMode: String, audioUri: String?, ringtoneEnabled: Boolean) {
         if (voiceMode == "AUDIO" && !audioUri.isNullOrBlank()) {
             playLocalRingtoneAsync(audioUri)
+            return
+        }
+
+        if (!ringtoneEnabled) {
             return
         }
 

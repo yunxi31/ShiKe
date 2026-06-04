@@ -25,5 +25,7 @@ data class AlarmEntity(
     /** TTS 朗读文字 */
     val voiceText: String = "",
     /** 用户自定义语音文件 URI */
-    val audioUri: String? = null
+    val audioUri: String? = null,
+    /** 是否启用闹铃音乐（如果为 false 则仅语音播报，不播放铃声） */
+    val ringtoneEnabled: Boolean = true
 )

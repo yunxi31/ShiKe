@@ -300,6 +300,111 @@ fun ScheduleScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             HorizontalDivider(color = Color(0xFFF1F1F5))
                             Spacer(modifier = Modifier.height(12.dp))
+
+                            // ── Enable Alarm Option ──
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "启用该时段闹铃",
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 14.sp,
+                                        color = DarkBrand
+                                    )
+                                    Text(
+                                        text = "在此时间段是否触发闹铃和语音播报",
+                                        fontSize = 11.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                                Switch(
+                                    checked = draft.isEnabled,
+                                    onCheckedChange = { viewModel.updateDraftEnabled(draft.id, it) },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.White,
+                                        checkedTrackColor = ActiveColor,
+                                        uncheckedThumbColor = Color.White,
+                                        uncheckedTrackColor = Color(0xFFE2E2EA)
+                                    )
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider(color = Color(0xFFF1F1F5))
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // ── Play Ringtone Option ──
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "同时播放闹铃铃声",
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 14.sp,
+                                        color = DarkBrand
+                                    )
+                                    Text(
+                                        text = "默认关闭（仅语音播报）。开启后将同时播放闹铃音乐",
+                                        fontSize = 11.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                                Switch(
+                                    checked = draft.ringtoneEnabled,
+                                    onCheckedChange = { viewModel.updateDraftRingtoneEnabled(draft.id, it) },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.White,
+                                        checkedTrackColor = ActiveColor,
+                                        uncheckedThumbColor = Color.White,
+                                        uncheckedTrackColor = Color(0xFFE2E2EA)
+                                    )
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider(color = Color(0xFFF1F1F5))
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // ── Lock Screen Setting Row ──
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "闹钟锁屏大屏提醒",
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 14.sp,
+                                        color = DarkBrand
+                                    )
+                                    Text(
+                                        text = "响铃时强制亮屏并弹出全屏闹铃界面",
+                                        fontSize = 11.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                                Switch(
+                                    checked = draft.lockScreenEnabled,
+                                    onCheckedChange = { viewModel.updateDraftLockScreenEnabled(draft.id, it) },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.White,
+                                        checkedTrackColor = ActiveColor,
+                                        uncheckedThumbColor = Color.White,
+                                        uncheckedTrackColor = Color(0xFFE2E2EA)
+                                    )
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider(color = Color(0xFFF1F1F5))
+                            Spacer(modifier = Modifier.height(12.dp))
                             
                             Text("语音提醒设置", fontSize = 12.sp, color = Color.Gray)
                             Spacer(modifier = Modifier.height(8.dp))

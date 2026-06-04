@@ -23,6 +23,7 @@ object AlarmScheduler {
             putExtra("alarmType", alarm.alarmType)
             putExtra("voiceMode", alarm.voiceMode)
             putExtra("voiceText", alarm.voiceText)
+            putExtra("ringtoneEnabled", alarm.ringtoneEnabled)
             alarm.audioUri?.let { putExtra("audioUri", it) }
         }
         val requestCode = alarm.alarmId.hashCode() and 0x7FFFFFFF
