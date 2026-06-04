@@ -65,6 +65,10 @@ class AlarmListViewModel @Inject constructor(
         }
     }
 
+    suspend fun getAlarmById(alarmId: String): AlarmEntity? {
+        return alarmDao.getById(alarmId)
+    }
+
     fun deleteAlarm(alarm: AlarmEntity) {
         viewModelScope.launch {
             cancelSystemAlarm(alarm)

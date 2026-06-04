@@ -15,6 +15,7 @@ import com.pomodoroalert.ui.screens.SettingsScreen
 import com.pomodoroalert.ui.screens.AlarmScreen
 import com.pomodoroalert.ui.screens.SplashScreen
 import com.pomodoroalert.ui.screens.ScheduleScreen
+import com.pomodoroalert.ui.screens.AlarmDetailScreen
 import com.pomodoroalert.ui.viewmodel.SettingsViewModel
 import com.pomodoroalert.ui.localization.ProvideLocalization
 
@@ -53,6 +54,17 @@ fun AppNavGraph() {
             composable("settings") { SettingsScreen(navController) }
             composable("alarm") { AlarmScreen(navController) }
             composable("schedule") { ScheduleScreen(navController) }
+            composable(
+                route = "alarm_detail/{alarmId}",
+                arguments = listOf(
+                    androidx.navigation.navArgument("alarmId") {
+                        type = androidx.navigation.NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                val alarmId = backStackEntry.arguments?.getString("alarmId") ?: ""
+                AlarmDetailScreen(navController, alarmId)
+            }
         }
     }
 }

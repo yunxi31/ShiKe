@@ -277,42 +277,9 @@ fun AlarmScreen(
                     items(filteredAlarms, key = { it.alarmId }) { alarm ->
                         AlarmCard(
                             alarm = alarm,
-                            ringtoneSource = ringtoneSource,
-                            builtInRingtone = builtInRingtone,
                             onToggle = { viewModel.toggleAlarm(alarm) },
-                            onLockScreenToggle = { checked ->
-                                viewModel.updateAlarm(alarm.copy(lockScreenEnabled = checked))
-                            },
-                            onRingtoneEnabledToggle = { checked ->
-                                viewModel.updateAlarm(alarm.copy(ringtoneEnabled = checked))
-                            },
-                            onEdit = { editingAlarm = alarm },
-                            onDelete = { viewModel.deleteAlarm(alarm) },
-                            onTimeClick = {
-                                TimePickerDialog(
-                                    context,
-                                    { _, h, m ->
-                                        viewModel.updateAlarm(alarm.copy(hour = h, minute = m))
-                                    },
-                                    alarm.hour, alarm.minute, true
-                                ).show()
-                            },
-                            onRingtoneClick = {
-                                alarmForRingtonePick = alarm
-                                val pickIntent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                                    putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
-                                    putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, loc.selectRingtoneTitle)
-                                    putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
-                                    putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                                    if (!alarm.ringtoneUri.isNullOrBlank()) {
-                                        putExtra(
-                                            RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
-                                            Uri.parse(alarm.ringtoneUri)
-                                        )
-                                    }
-                                }
-                                launchRingtonePicker(pickIntent)
-                            }
+                            onEdit = { navController.navigate("alarm_detail/${alarm.alarmId}") },
+                            onDelete = { viewModel.deleteAlarm(alarm) }
                         )
                     }
                 }
@@ -352,80 +319,50 @@ fun AlarmScreen(
 @Composable
 private fun AlarmCard(
     alarm: AlarmEntity,
-    ringtoneSource: String,
-    builtInRingtone: String,
     onToggle: () -> Unit,
-    onLockScreenToggle: (Boolean) -> Unit,
-    onRingtoneEnabledToggle: (Boolean) -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    onTimeClick: () -> Unit,
-    onRingtoneClick: () -> Unit
+    onDelete: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onEdit() },
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White)
-                .padding(horizontal = 16.dp, vertical = 14.dp)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column {
-                // ── Top Row: Time + Switch ──
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // Time display (clickable to change)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = String.format("%02d:%02d", alarm.hour, alarm.minute),
-                            fontSize = 36.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (alarm.isEnabled) DarkBrand else Color(0xFF808191).copy(alpha = 0.6f),
-                            letterSpacing = 1.sp,
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = String.format("%02d:%02d", alarm.hour, alarm.minute),
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (alarm.isEnabled) DarkBrand else Color(0xFF808191).copy(alpha = 0.6f),
+                        letterSpacing = 1.sp
+                    )
+                    if (alarm.alarmType == "SCHEDULE") {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable { onTimeClick() }
-                                .padding(horizontal = 4.dp, vertical = 2.dp)
-                        )
-                        if (alarm.alarmType == "SCHEDULE") {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Box(
-                                modifier = Modifier
-                                    .background(ActiveColor.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = "作息",
-                                    color = ActiveColor,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                                .background(ActiveColor.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "作息",
+                                color = ActiveColor,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
-
-                    Switch(
-                        checked = alarm.isEnabled,
-                        onCheckedChange = { onToggle() },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = ActiveColor,
-                            uncheckedThumbColor = Color.White,
-                            uncheckedTrackColor = Color(0xFFE2E2EA)
-                        )
-                    )
                 }
-
-                // ── Remark ──
                 if (alarm.remark.isNotBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
@@ -435,168 +372,33 @@ private fun AlarmCard(
                         color = if (alarm.isEnabled) DarkBrand else Color(0xFF808191).copy(alpha = 0.6f)
                     )
                 }
+            }
 
-                // ── Schedule details (TTS/Audio info) ──
-                if (alarm.alarmType == "SCHEDULE") {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.NotificationsActive,
-                            contentDescription = null,
-                            tint = ActiveColor,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        val infoText = when (alarm.voiceMode) {
-                            "TTS" -> "语音播报: \"${alarm.voiceText}\""
-                            "AUDIO" -> {
-                                val fileName = if (alarm.audioUri?.contains("|") == true) {
-                                    alarm.audioUri.split("|")[1]
-                                } else {
-                                    "自定义录音"
-                                }
-                                "语音播报: $fileName"
-                            }
-                            else -> "仅响铃"
-                        }
-                        Text(
-                            text = infoText,
-                            fontSize = 12.sp,
-                            color = ActiveColor.copy(alpha = 0.8f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-
-                // ── Lock Screen Setting Row ──
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(36.dp)
                 ) {
-                    val cardLoc = LocalLocalization.current
-                    Text(
-                        text = cardLoc.lockScreenEnabledTitle,
-                        fontSize = 14.sp,
-                        color = if (alarm.isEnabled) DarkBrand else Color(0xFF808191).copy(alpha = 0.6f)
-                    )
-                    Switch(
-                        checked = alarm.lockScreenEnabled,
-                        onCheckedChange = { onLockScreenToggle(it) },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = ActiveColor,
-                            uncheckedThumbColor = Color.White,
-                            uncheckedTrackColor = Color(0xFFE2E2EA)
-                        )
+                    Icon(
+                        Icons.Filled.Delete,
+                        contentDescription = null,
+                        tint = Color(0xFFFF7A8A).copy(alpha = 0.8f),
+                        modifier = Modifier.size(18.dp)
                     )
                 }
+                
+                Spacer(modifier = Modifier.width(8.dp))
 
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "同时播放闹铃铃声",
-                        fontSize = 14.sp,
-                        color = if (alarm.isEnabled) DarkBrand else Color(0xFF808191).copy(alpha = 0.6f)
+                Switch(
+                    checked = alarm.isEnabled,
+                    onCheckedChange = { onToggle() },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = ActiveColor,
+                        uncheckedThumbColor = Color.White,
+                        uncheckedTrackColor = Color(0xFFE2E2EA)
                     )
-                    Switch(
-                        checked = alarm.ringtoneEnabled,
-                        onCheckedChange = { onRingtoneEnabledToggle(it) },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = ActiveColor,
-                            uncheckedThumbColor = Color.White,
-                            uncheckedTrackColor = Color(0xFFE2E2EA)
-                        )
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // ── Bottom Row: Ringtone (Left) & Edit/Delete (Right) ──
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val isRingtoneClickable = ringtoneSource != "built_in"
-                    // Ringtone label
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(ActiveColor.copy(alpha = if (isRingtoneClickable) 0.08f else 0.04f))
-                            .then(
-                                if (isRingtoneClickable) {
-                                    Modifier.clickable { onRingtoneClick() }
-                                } else {
-                                    Modifier
-                                }
-                            )
-                            .padding(vertical = 4.dp, horizontal = 8.dp)
-                            .weight(1f, fill = false)
-                    ) {
-                        Icon(
-                            Icons.Filled.MusicNote,
-                            contentDescription = null,
-                            tint = if (isRingtoneClickable) ActiveColor else LightBrand,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        
-                        val displayName = if (ringtoneSource == "built_in") {
-                            getBuiltInRingtoneDisplayName(builtInRingtone)
-                        } else {
-                            ringtoneTitle(alarm.ringtoneUri)
-                        }
-                        
-                        Text(
-                            text = displayName,
-                            fontSize = 12.sp,
-                            color = if (isRingtoneClickable) ActiveColor else LightBrand,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    // Edit & Delete Buttons
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        val cardLoc = LocalLocalization.current
-                        IconButton(
-                            onClick = onEdit,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                Icons.Filled.Edit,
-                                contentDescription = cardLoc.editRemarkTitle,
-                                tint = LightBrand,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        IconButton(
-                            onClick = onDelete,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                Icons.Filled.Delete,
-                                contentDescription = cardLoc.deleteAlarm,
-                                tint = Color(0xFFFF7A8A),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
+                )
             }
         }
     }
