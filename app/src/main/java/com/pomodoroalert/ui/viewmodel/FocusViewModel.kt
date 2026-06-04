@@ -54,7 +54,8 @@ class FocusViewModel @Inject constructor(
             }
 
             val task = taskRepo.getTaskById(taskId) ?: return@launch
-            _currentTask.value = task
+            taskRepo.updateStatus(taskId, "进行中")
+            _currentTask.value = task.copy(status = "进行中")
             com.pomodoroalert.service.TimerState.remainingTime.value = task.duration
             val intent = Intent(context, TimerService::class.java).apply {
                 putExtra("duration", task.duration)

@@ -68,6 +68,9 @@
             android:name=".receiver.ExactAlarmReceiver"
             android:exported="true" />
         <receiver
+            android:name=".receiver.AlarmTriggerReceiver"
+            android:exported="true" />
+        <receiver
             android:name=".receiver.IndependentAlarmReceiver"
             android:exported="true">
             <intent-filter>

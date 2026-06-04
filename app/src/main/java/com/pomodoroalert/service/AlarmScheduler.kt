@@ -11,11 +11,16 @@ import com.pomodoroalert.MainActivity
 import com.pomodoroalert.data.AlarmEntity
 import java.util.Calendar
 
+import com.pomodoroalert.receiver.AlarmTriggerReceiver
+
 object AlarmScheduler {
     private const val TAG = "AlarmScheduler"
 
     private fun getPendingIntent(context: Context, alarm: AlarmEntity, flags: Int): PendingIntent? {
-        val intent = Intent(context, AlarmService::class.java).apply {
+        // Use BroadcastReceiver instead of directly starting ForegroundService.
+        // AlarmManager → BroadcastReceiver → AlarmService is the only reliable chain
+        // on OEM devices (ColorOS, MIUI, etc.) that restrict background FGS starts.
+        val intent = Intent(context, AlarmTriggerReceiver::class.java).apply {
             putExtra("alarmId", alarm.alarmId)
             putExtra("alarmRemark", alarm.remark.ifBlank { "闹钟时间到了！" })
             alarm.ringtoneUri?.let { putExtra("ringtoneUri", it) }
@@ -28,19 +33,15 @@ object AlarmScheduler {
         }
         val requestCode = alarm.alarmId.hashCode() and 0x7FFFFFFF
 
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            PendingIntent.getForegroundService(context, requestCode, intent, flags)
-        } else {
-            PendingIntent.getService(context, requestCode, intent, flags)
-        }
+        return PendingIntent.getBroadcast(context, requestCode, intent, flags)
     }
 
     fun scheduleAlarm(context: Context, alarm: AlarmEntity) {
         val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val immutable = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
         val pi = getPendingIntent(
             context, alarm,
-            PendingIntent.FLAG_UPDATE_CURRENT or
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+            PendingIntent.FLAG_UPDATE_CURRENT or immutable
         ) ?: return
 
         val cal = Calendar.getInstance().apply {
@@ -79,10 +80,10 @@ object AlarmScheduler {
 
     fun cancelAlarm(context: Context, alarm: AlarmEntity) {
         val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val immutable = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
         val pi = getPendingIntent(
             context, alarm,
-            PendingIntent.FLAG_NO_CREATE or
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+            PendingIntent.FLAG_NO_CREATE or immutable
         )
         if (pi != null) {
             am.cancel(pi)
