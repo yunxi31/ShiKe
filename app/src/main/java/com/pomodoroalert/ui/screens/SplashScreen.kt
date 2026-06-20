@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +49,19 @@ fun SplashScreen(
     onSplashFinished: () -> Unit
 ) {
     val loc = LocalLocalization.current
+    val pageBackground = MaterialTheme.colorScheme.background
+    val textMain = MaterialTheme.colorScheme.onBackground
+    val textMuted = MaterialTheme.colorScheme.onSurfaceVariant
+    val brand = MaterialTheme.colorScheme.primary
+    val brandLight = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+
+    val backgroundGradient = Brush.verticalGradient(
+        colors = if (pageBackground == Color(0xFF1B1D21)) {
+            listOf(Color(0xFF1B1D21), Color(0xFF24262A))
+        } else {
+            listOf(Color(0xFFF7F8FC), Color(0xFFEAEAFA))
+        }
+    )
 
     // Animations states
     val boxScale = remember { Animatable(0f) }
@@ -103,14 +117,7 @@ fun SplashScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFF7F8FC),
-                        Color(0xFFEAEAFA)
-                    )
-                )
-            ),
+            .background(backgroundGradient),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -131,7 +138,7 @@ fun SplashScreen(
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFF6C5DD3),
+                                brand,
                                 Color.Transparent
                             )
                         ),
@@ -170,8 +177,8 @@ fun SplashScreen(
                         path = checkboxPath,
                         brush = Brush.linearGradient(
                             colors = listOf(
-                                Color(0xFF8C7DF3),
-                                Color(0xFF6C5DD3)
+                                brandLight,
+                                brand
                             )
                         ),
                         style = Stroke(
@@ -240,7 +247,7 @@ fun SplashScreen(
             ) {
                 Text(
                     text = "时刻",
-                    color = Color(0xFF1B1D21),
+                    color = textMain,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.SansSerif,
@@ -249,7 +256,7 @@ fun SplashScreen(
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = loc.appTagline,
-                    color = Color(0xFF808191),
+                    color = textMuted,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Normal,
                     letterSpacing = 0.5.sp

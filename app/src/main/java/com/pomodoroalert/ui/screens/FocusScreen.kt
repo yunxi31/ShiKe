@@ -29,14 +29,6 @@ import androidx.navigation.NavController
 import com.pomodoroalert.ui.viewmodel.FocusViewModel
 import com.pomodoroalert.ui.localization.LocalLocalization
 
-// Design Tokens adapted to HomeScreen style
-private val PageBackground = Color(0xFFF7F8FC)
-private val Brand = Color(0xFF6C5DD3)      // Main purple-blue
-private val BrandLight = Color(0xFF8B7CF0) // Light purple-blue for gradient
-private val TextMain = Color(0xFF1B1D21)
-private val TextMuted = Color(0xFF808191)
-private val ErrorRed = Color(0xFFFF7A8A)   // Match notification/work red
-
 @Composable
 fun FocusScreen(navController: NavController, taskId: String? = null) {
     val viewModel: FocusViewModel = hiltViewModel()
@@ -44,6 +36,14 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
     val currentTask by viewModel.currentTask.collectAsState()
     val totalTime = currentTask?.duration ?: 1L
     val loc = LocalLocalization.current
+
+    val pageBackground = MaterialTheme.colorScheme.background
+    val brand = MaterialTheme.colorScheme.primary
+    val brandLight = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+    val textMain = MaterialTheme.colorScheme.onBackground
+    val textMuted = MaterialTheme.colorScheme.onSurfaceVariant
+    val errorRed = MaterialTheme.colorScheme.error
+    val surfaceColor = MaterialTheme.colorScheme.surface
 
     val progress = if (totalTime > 0) {
         (remainingTime.toFloat() / totalTime.toFloat()).coerceIn(0f, 1f)
@@ -59,7 +59,11 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
     }
 
     val backgroundGradient = Brush.verticalGradient(
-        colors = listOf(PageBackground, Color(0xFFEFF0F9))
+        colors = if (pageBackground == Color(0xFF1B1D21)) {
+            listOf(pageBackground, Color(0xFF24262A))
+        } else {
+            listOf(pageBackground, Color(0xFFEFF0F9))
+        }
     )
 
     Surface(
@@ -80,19 +84,19 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
                         text = loc.focusingTitle,
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        color = TextMain
+                        color = textMain
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
-                            .background(Color.White)
+                            .background(surfaceColor)
                             .padding(horizontal = 20.dp, vertical = 10.dp)
                     ) {
                         Text(
                             text = currentTask?.taskName ?: loc.noTaskSelected,
                             style = MaterialTheme.typography.titleMedium,
-                            color = Brand,
+                            color = brand,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -106,7 +110,7 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         val strokeWidth = 18.dp.toPx()
                         drawArc(
-                            color = Brand.copy(alpha = 0.1f),
+                            color = brand.copy(alpha = 0.1f),
                             startAngle = -90f,
                             sweepAngle = 360f,
                             useCenter = false,
@@ -116,7 +120,7 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
                         )
                         drawArc(
                             brush = Brush.linearGradient(
-                                colors = listOf(BrandLight, Brand)
+                                colors = listOf(brandLight, brand)
                             ),
                             startAngle = -90f,
                             sweepAngle = animatedProgress * 360f,
@@ -133,7 +137,7 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
                         text = String.format("%02d:%02d", minutes, seconds),
                         fontSize = 76.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextMain
+                        color = textMain
                     )
                 }
 
@@ -142,7 +146,7 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(28.dp))
-                        .background(Color.White)
+                        .background(surfaceColor)
                         .padding(horizontal = 24.dp, vertical = 20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
@@ -156,12 +160,12 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
                             modifier = Modifier
                                 .size(56.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(ErrorRed.copy(alpha = 0.1f))
+                                .background(errorRed.copy(alpha = 0.1f))
                         ) {
-                            Icon(Icons.Filled.Close, contentDescription = loc.abandon, tint = ErrorRed, modifier = Modifier.size(28.dp))
+                            Icon(Icons.Filled.Close, contentDescription = loc.abandon, tint = errorRed, modifier = Modifier.size(28.dp))
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(loc.abandon, style = MaterialTheme.typography.labelMedium, color = TextMuted)
+                        Text(loc.abandon, style = MaterialTheme.typography.labelMedium, color = textMuted)
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -170,8 +174,8 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
                                 viewModel.completeTask()
                                 navController.popBackStack("home", inclusive = false)
                             },
-                            containerColor = Brand,
-                            contentColor = Color.White,
+                            containerColor = brand,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(72.dp),
                             shape = CircleShape,
                             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp, pressedElevation = 12.dp)
@@ -179,7 +183,7 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
                             Icon(Icons.Filled.Check, contentDescription = loc.complete, modifier = Modifier.size(36.dp))
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(loc.complete, style = MaterialTheme.typography.labelMedium, color = TextMain, fontWeight = FontWeight.Bold)
+                        Text(loc.complete, style = MaterialTheme.typography.labelMedium, color = textMain, fontWeight = FontWeight.Bold)
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -188,12 +192,12 @@ fun FocusScreen(navController: NavController, taskId: String? = null) {
                             modifier = Modifier
                                 .size(56.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Brand.copy(alpha = 0.1f))
+                                .background(brand.copy(alpha = 0.1f))
                         ) {
-                            Icon(Icons.Filled.MoreTime, contentDescription = loc.postponeOption, tint = Brand, modifier = Modifier.size(28.dp))
+                            Icon(Icons.Filled.MoreTime, contentDescription = loc.postponeOption, tint = brand, modifier = Modifier.size(28.dp))
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(loc.postponeOption, style = MaterialTheme.typography.labelMedium, color = TextMuted)
+                        Text(loc.postponeOption, style = MaterialTheme.typography.labelMedium, color = textMuted)
                     }
                 }
             }

@@ -47,7 +47,12 @@ import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(
+    navController: NavController,
+    viewModel: HomeViewModel = hiltViewModel(),
+    onToggleDarkMode: () -> Unit = {},
+    isDarkMode: Boolean = false
+) {
     val tasks by viewModel.tasks.collectAsState()
     val rawTasks by viewModel.rawTasks.collectAsState()
     val currentFilter by viewModel.currentFilter.collectAsState()
@@ -59,7 +64,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
     var showAddSheet by remember { mutableStateOf(false) }
     
     Scaffold(
-        containerColor = Color(0xFFF7F8FC),
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             CustomBottomBar(
                 selectedTab = selectedTab,
@@ -73,7 +78,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
             FloatingActionButton(
                 onClick = { showAddSheet = true },
                 shape = CircleShape,
-                containerColor = Color(0xFF6C5DD3),
+                containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
             ) {
@@ -93,7 +98,9 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                     onViewTasks = { selectedTab = 1 },
                     onStartFocus = { taskId -> navController.navigate("focus?taskId=$taskId") },
                     onToggleStatus = viewModel::toggleTaskStatus,
-                    onDelete = viewModel::deleteTask
+                    onDelete = viewModel::deleteTask,
+                    onToggleDarkMode = onToggleDarkMode,
+                    isDarkMode = isDarkMode
                 )
                 1 -> TasksTab(
                     tasks = tasks,
@@ -113,7 +120,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
         ModalBottomSheet(
             onDismissRequest = { showAddSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             AddTaskSheetContent(
@@ -139,7 +146,7 @@ private fun CustomBottomBar(
 ) {
     val loc = LocalLocalization.current
     BottomAppBar(
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 8.dp,
         modifier = Modifier
             .fillMaxWidth()
@@ -155,7 +162,7 @@ private fun CustomBottomBar(
                 Icon(
                     imageVector = Icons.Rounded.Home,
                     contentDescription = loc.homeNav,
-                    tint = if (selectedTab == 0) Color(0xFF6C5DD3) else Color(0xFF808191)
+                    tint = if (selectedTab == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -164,7 +171,7 @@ private fun CustomBottomBar(
                 Icon(
                     imageVector = Icons.Rounded.CalendarToday,
                     contentDescription = loc.calendarNav,
-                    tint = if (selectedTab == 1) Color(0xFF6C5DD3) else Color(0xFF808191)
+                    tint = if (selectedTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -173,7 +180,7 @@ private fun CustomBottomBar(
                 Icon(
                     imageVector = Icons.Rounded.Alarm,
                     contentDescription = loc.alarmNav,
-                    tint = Color(0xFF808191)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -182,7 +189,7 @@ private fun CustomBottomBar(
                 Icon(
                     imageVector = Icons.Rounded.BarChart,
                     contentDescription = loc.statsNav,
-                    tint = Color(0xFF808191)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -191,7 +198,7 @@ private fun CustomBottomBar(
                 Icon(
                     imageVector = Icons.Rounded.Settings,
                     contentDescription = loc.settingsNav,
-                    tint = Color(0xFF808191)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -204,7 +211,9 @@ private fun DashboardTab(
     onViewTasks: () -> Unit,
     onStartFocus: (String) -> Unit,
     onToggleStatus: (String, Boolean) -> Unit,
-    onDelete: (String) -> Unit
+    onDelete: (String) -> Unit,
+    onToggleDarkMode: () -> Unit,
+    isDarkMode: Boolean
 ) {
     val loc = LocalLocalization.current
     val todayTasks = remember(rawTasks) {
@@ -225,7 +234,10 @@ private fun DashboardTab(
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         item {
-            DashboardHeader()
+            DashboardHeader(
+                onToggleDarkMode = onToggleDarkMode,
+                isDarkMode = isDarkMode
+            )
         }
 
         item {
@@ -252,7 +264,10 @@ private fun DashboardTab(
 }
 
 @Composable
-private fun DashboardHeader() {
+private fun DashboardHeader(
+    onToggleDarkMode: () -> Unit,
+    isDarkMode: Boolean
+) {
     val loc = LocalLocalization.current
     val isZh = loc.hello == "你好！"
     
@@ -370,30 +385,46 @@ private fun DashboardHeader() {
             Icon(
                 imageVector = Icons.Rounded.AccessTime,
                 contentDescription = "Quote",
-                tint = Color(0xFF6C5DD3),
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = quote,
-                color = Color(0xFF1B1D21),
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold
             )
         }
         
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF6C5DD3).copy(alpha = 0.1f))
-                .padding(horizontal = 12.dp, vertical = 6.dp)
+        Row(
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = dateStr,
-                color = Color(0xFF6C5DD3),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
-            )
+            IconButton(
+                onClick = onToggleDarkMode,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = if (isDarkMode) Icons.Rounded.WbSunny else Icons.Rounded.NightsStay,
+                    contentDescription = "Toggle Dark Mode",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(4.dp))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = dateStr,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -404,6 +435,10 @@ private fun ProgressHeroCard(
     onViewTasks: () -> Unit
 ) {
     val loc = LocalLocalization.current
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val gradientColors = remember(primaryColor) {
+        listOf(primaryColor.copy(alpha = 0.85f), primaryColor)
+    }
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -413,9 +448,7 @@ private fun ProgressHeroCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    Brush.linearGradient(
-                        listOf(Color(0xFF8B7CF0), Color(0xFF6C5DD3))
-                    )
+                    Brush.linearGradient(gradientColors)
                 )
                 .padding(20.dp)
         ) {
@@ -441,7 +474,7 @@ private fun ProgressHeroCard(
                     ) {
                         Text(
                             text = loc.viewTasks,
-                            color = Color(0xFF6C5DD3),
+                            color = primaryColor,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -486,7 +519,7 @@ private fun InProgressSection(
         ) {
             Text(
                 text = loc.inProgressTitle(inProgressTasks.size),
-                color = Color(0xFF1B1D21),
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -497,7 +530,7 @@ private fun InProgressSection(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Box(
@@ -508,7 +541,7 @@ private fun InProgressSection(
                 ) {
                     Text(
                         text = loc.noOngoingTasks,
-                        color = Color(0xFF808191),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -524,7 +557,7 @@ private fun InProgressSection(
                         3 -> Triple(loc.groupWork, Color(0xFFFF7A8A), Icons.Rounded.Work)
                         2 -> Triple(loc.groupStudy, Color(0xFFFFB547), Icons.Rounded.Book)
                         1 -> Triple(loc.groupPersonal, Color(0xFF3F8CFF), Icons.Rounded.Person)
-                        else -> Triple(loc.groupMisc, Color(0xFF6C5DD3), Icons.Rounded.Tag)
+                        else -> Triple(loc.groupMisc, MaterialTheme.colorScheme.primary, Icons.Rounded.Tag)
                     }
 
                     Card(
@@ -532,7 +565,7 @@ private fun InProgressSection(
                             .width(200.dp)
                             .clickable { onStartFocus(task.taskId) },
                         shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(
@@ -547,7 +580,7 @@ private fun InProgressSection(
                             ) {
                                 Text(
                                     text = groupLabel,
-                                    color = Color(0xFF808191),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 11.sp
                                 )
                                 Icon(
@@ -560,7 +593,7 @@ private fun InProgressSection(
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
                                 text = task.taskName,
-                                color = Color(0xFF1B1D21),
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1
@@ -572,8 +605,8 @@ private fun InProgressSection(
                                     .fillMaxWidth()
                                     .height(6.dp)
                                     .clip(RoundedCornerShape(3.dp)),
-                                color = Color(0xFF6C5DD3),
-                                trackColor = Color(0xFFF0EFFC)
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                         }
                     }
@@ -594,7 +627,7 @@ private fun TaskGroupsSection(
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = loc.taskGroupsTitle,
-            color = Color(0xFF1B1D21),
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold
         )
@@ -604,7 +637,7 @@ private fun TaskGroupsSection(
             Triple(3, loc.groupWork, Color(0xFFFF7A8A)),
             Triple(2, loc.groupStudy, Color(0xFFFFB547)),
             Triple(1, loc.groupPersonal, Color(0xFF3F8CFF)),
-            Triple(0, loc.groupMisc, Color(0xFF6C5DD3))
+            Triple(0, loc.groupMisc, MaterialTheme.colorScheme.primary)
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -655,7 +688,7 @@ private fun TaskGroupCard(
                 if (total > 0) Modifier.clickable { expanded = !expanded } else Modifier
             ),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column {
@@ -678,8 +711,8 @@ private fun TaskGroupCard(
                     }
                     Spacer(modifier = Modifier.width(14.dp))
                     Column {
-                        Text(text = name, color = Color(0xFF1B1D21), fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                        Text(text = loc.tasksCount(total), color = Color(0xFF808191), fontSize = 12.sp)
+                        Text(text = name, color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        Text(text = loc.tasksCount(total), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                 }
 
@@ -698,7 +731,7 @@ private fun TaskGroupCard(
                         )
                         Text(
                             text = "$percentage%",
-                            color = Color(0xFF1B1D21),
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -708,7 +741,7 @@ private fun TaskGroupCard(
                         Icon(
                             imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                             contentDescription = null,
-                            tint = Color(0xFF808191),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -720,7 +753,7 @@ private fun TaskGroupCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(1.dp)
-                        .background(Color(0xFFF0EFFC))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
                 Column(
                     modifier = Modifier
@@ -772,7 +805,7 @@ private fun GroupTaskItem(
                 Icon(
                     imageVector = if (isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
                     contentDescription = null,
-                    tint = if (isCompleted) groupColor else Color(0xFF808191),
+                    tint = if (isCompleted) groupColor else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -784,21 +817,21 @@ private fun GroupTaskItem(
                     text = task.taskName,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = if (isCompleted) Color(0xFF808191) else Color(0xFF1B1D21),
+                    color = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                     textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Rounded.Timer,
                         contentDescription = null,
-                        tint = Color(0xFF808191),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(12.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     val mins = (task.duration / 60_000L).toInt()
                     Text(
                         text = loc.minutesUnit(mins),
-                        color = Color(0xFF808191),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp
                     )
                 }
@@ -811,12 +844,12 @@ private fun GroupTaskItem(
                     onClick = onStartFocus,
                     modifier = Modifier
                         .size(28.dp)
-                        .background(Color(0xFF6C5DD3).copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.PlayArrow,
                         contentDescription = loc.startFocus,
-                        tint = Color(0xFF6C5DD3),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -830,7 +863,7 @@ private fun GroupTaskItem(
                 Icon(
                     imageVector = Icons.Rounded.Delete,
                     contentDescription = loc.delete,
-                    tint = Color(0xFF808191).copy(alpha = 0.6f),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -864,7 +897,7 @@ private fun TasksTab(
         ) {
             Text(
                 text = loc.todayTasksTitle,
-                color = Color(0xFF1B1D21),
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -872,7 +905,7 @@ private fun TasksTab(
                 Icon(
                     imageVector = Icons.Rounded.Notifications,
                     contentDescription = loc.notificationsDescription,
-                    tint = Color(0xFF1B1D21),
+                    tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -899,14 +932,14 @@ private fun TasksTab(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
                         .background(
-                            if (isSelected) Color(0xFF6C5DD3) else Color(0xFF6C5DD3).copy(alpha = 0.08f)
+                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
                         )
                         .clickable { onFilterSelected(filterVal) }
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
                         text = label,
-                        color = if (isSelected) Color.White else Color(0xFF6C5DD3),
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -925,7 +958,7 @@ private fun TasksTab(
             ) {
                 Text(
                     text = loc.noTasksForStatus,
-                    color = Color(0xFF808191),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp
                 )
             }
@@ -985,7 +1018,7 @@ private fun WeeklyCalendarStrip(
                     .weight(1f)
                     .padding(horizontal = 2.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(if (isSelected) Color(0xFF6C5DD3) else Color.Transparent)
+                    .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                     .clickable { onDateSelected(timestamp) }
                     .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center
@@ -993,21 +1026,21 @@ private fun WeeklyCalendarStrip(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = monthLabel,
-                        color = if (isSelected) Color.White.copy(alpha = 0.8f) else Color(0xFF808191),
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = dayNumber,
-                        color = if (isSelected) Color.White else Color(0xFF1B1D21),
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = dayOfWeek,
-                        color = if (isSelected) Color.White.copy(alpha = 0.8f) else Color(0xFF808191),
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -1039,7 +1072,7 @@ private fun FigmaTaskCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onToggleStatus(task.taskId, !isCompleted) },
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -1055,7 +1088,7 @@ private fun FigmaTaskCard(
             ) {
                 Text(
                     text = groupLabel,
-                    color = Color(0xFF808191),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -1080,7 +1113,7 @@ private fun FigmaTaskCard(
                 text = task.taskName,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = if (isCompleted) Color(0xFF808191) else Color(0xFF1B1D21),
+                color = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                 textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None
             )
 
@@ -1095,14 +1128,14 @@ private fun FigmaTaskCard(
                     Icon(
                         imageVector = Icons.Rounded.Timer,
                         contentDescription = null,
-                        tint = Color(0xFF808191),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     val mins = (task.duration / 60_000L).toInt()
                     Text(
                         text = loc.minutesUnit(mins),
-                        color = Color(0xFF808191),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                 }
@@ -1116,12 +1149,12 @@ private fun FigmaTaskCard(
                             onClick = { onStartFocus(task.taskId) },
                             modifier = Modifier
                                 .size(28.dp)
-                                .background(Color(0xFF6C5DD3).copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.PlayArrow,
                                 contentDescription = loc.startFocus,
-                                tint = Color(0xFF6C5DD3),
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -1134,15 +1167,15 @@ private fun FigmaTaskCard(
                         Icon(
                             imageVector = Icons.Rounded.Delete,
                             contentDescription = loc.delete,
-                            tint = Color(0xFF808191).copy(alpha = 0.7f),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             modifier = Modifier.size(16.dp)
                         )
                     }
 
                     val (badgeText, badgeBg, badgeTextColor) = when {
-                        isCompleted -> Triple(loc.statusCompleted, Color(0xFFF3F0FF), Color(0xFF6C5DD3))
-                        isProgress -> Triple(loc.statusInProgress, Color(0xFFFFF6E5), Color(0xFFFFB547))
-                        else -> Triple(loc.statusTodo, Color(0xFFE4F0FF), Color(0xFF3F8CFF))
+                        isCompleted -> Triple(loc.statusCompleted, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), MaterialTheme.colorScheme.primary)
+                        isProgress -> Triple(loc.statusInProgress, Color(0xFFFFB547).copy(alpha = 0.15f), Color(0xFFFFB547))
+                        else -> Triple(loc.statusTodo, Color(0xFF3F8CFF).copy(alpha = 0.15f), Color(0xFF3F8CFF))
                     }
                     Box(
                         modifier = Modifier
@@ -1187,14 +1220,14 @@ private fun AddTaskSheetContent(
             text = loc.addProjectOrTask,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF1B1D21)
+            color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = loc.taskGroupLabel,
             fontSize = 12.sp,
-            color = Color(0xFF808191),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -1214,7 +1247,7 @@ private fun AddTaskSheetContent(
                     3 -> Color(0xFFFF7A8A)
                     2 -> Color(0xFFFFB547)
                     1 -> Color(0xFF3F8CFF)
-                    else -> Color(0xFF6C5DD3)
+                    else -> MaterialTheme.colorScheme.primary
                 }
 
                 Box(
@@ -1243,7 +1276,7 @@ private fun AddTaskSheetContent(
         Text(
             text = loc.taskNameLabel,
             fontSize = 12.sp,
-            color = Color(0xFF808191),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -1253,12 +1286,12 @@ private fun AddTaskSheetContent(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             singleLine = true,
-            placeholder = { Text(loc.placeholderTaskName, color = Color(0xFF808191).copy(alpha = 0.6f)) },
+            placeholder = { Text(loc.placeholderTaskName, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF6C5DD3),
-                unfocusedBorderColor = Color(0xFF808191).copy(alpha = 0.3f),
-                focusedContainerColor = Color(0xFFF7F8FC),
-                unfocusedContainerColor = Color(0xFFF7F8FC)
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
             )
         )
 
@@ -1267,7 +1300,7 @@ private fun AddTaskSheetContent(
         Text(
             text = loc.durationLabel,
             fontSize = 12.sp,
-            color = Color(0xFF808191),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -1283,7 +1316,7 @@ private fun AddTaskSheetContent(
                         .weight(1f)
                         .clip(RoundedCornerShape(12.dp))
                         .background(
-                            if (isSelected) Color(0xFF6C5DD3) else Color(0xFF6C5DD3).copy(alpha = 0.08f)
+                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
                         )
                         .clickable { durationOption = mins }
                         .padding(vertical = 8.dp),
@@ -1291,7 +1324,7 @@ private fun AddTaskSheetContent(
                 ) {
                     Text(
                         text = loc.durationMinOption(mins),
-                        color = if (isSelected) Color.White else Color(0xFF6C5DD3),
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -1304,7 +1337,7 @@ private fun AddTaskSheetContent(
         Text(
             text = loc.dueDateLabel,
             fontSize = 12.sp,
-            color = Color(0xFF808191),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -1324,7 +1357,7 @@ private fun AddTaskSheetContent(
                         .weight(1f)
                         .clip(RoundedCornerShape(12.dp))
                         .background(
-                            if (isSelected) Color(0xFF6C5DD3) else Color(0xFF6C5DD3).copy(alpha = 0.08f)
+                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
                         )
                         .clickable { dueDateOption = opt }
                         .padding(vertical = 8.dp),
@@ -1332,7 +1365,7 @@ private fun AddTaskSheetContent(
                 ) {
                     Text(
                         text = label,
-                        color = if (isSelected) Color.White else Color(0xFF6C5DD3),
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -1368,11 +1401,11 @@ private fun AddTaskSheetContent(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6C5DD3)),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(16.dp),
             contentPadding = PaddingValues(vertical = 14.dp)
         ) {
-            Text(loc.addTaskButton, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+            Text(loc.addTaskButton, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onPrimary)
         }
     }
 }

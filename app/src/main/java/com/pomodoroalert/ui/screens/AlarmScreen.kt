@@ -50,11 +50,7 @@ import com.pomodoroalert.ui.localization.LocalLocalization
 import com.pomodoroalert.ui.RingtoneCopyHelper
 
 // ── Design Tokens ──────────────────────────────────────────────────────
-private val DarkBrand = Color(0xFF1B1D21)
-private val LightBrand = Color(0xFF808191)
-private val ActiveColor = Color(0xFF6C5DD3)
-private val InactiveColor = Color(0xFF808191).copy(alpha = 0.5f)
-private val PageBg = Color(0xFFF7F8FC)
+// Removed global static Color variables to support dynamic Material3 themes.
 
 // ── Helper: 获取铃声标题 ──
 @Composable
@@ -178,26 +174,26 @@ fun AlarmScreen(
         }
     }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = PageBg) {
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.fillMaxSize()) {
             // ── Top Bar ──
             CenterAlignedTopAppBar(
                 title = {
-                    Text(loc.alarmListTitle, fontWeight = FontWeight.Bold, color = DarkBrand, fontSize = 20.sp)
+                    Text(loc.alarmListTitle, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp)
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = loc.backDescription, tint = DarkBrand)
+                        Icon(Icons.Filled.ArrowBack, contentDescription = loc.backDescription, tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
                 actions = {
                     if (selectedTabIndex == 0) {
                         IconButton(onClick = { showAddDialog = true }) {
-                            Icon(Icons.Filled.Add, contentDescription = loc.addAlarm, tint = DarkBrand)
+                            Icon(Icons.Filled.Add, contentDescription = loc.addAlarm, tint = MaterialTheme.colorScheme.onBackground)
                         }
                     } else {
                         IconButton(onClick = { navController.navigate("schedule") }) {
-                            Icon(Icons.Filled.CalendarToday, contentDescription = "作息提醒", tint = DarkBrand)
+                            Icon(Icons.Filled.CalendarToday, contentDescription = "作息提醒", tint = MaterialTheme.colorScheme.onBackground)
                         }
                     }
                 },
@@ -210,7 +206,7 @@ fun AlarmScreen(
             TabRow(
                 selectedTabIndex = selectedTabIndex,
                 containerColor = Color.Transparent,
-                contentColor = ActiveColor,
+                contentColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 16.dp)
             ) {
                 tabTitles.forEachIndexed { index, title ->
@@ -222,7 +218,7 @@ fun AlarmScreen(
                                 text = title,
                                 fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
                                 fontSize = 15.sp,
-                                color = if (selectedTabIndex == index) ActiveColor else LightBrand
+                                color = if (selectedTabIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     )
@@ -256,7 +252,7 @@ fun AlarmScreen(
                                     Icons.Rounded.NotificationsOff,
                                     contentDescription = null,
                                     modifier = Modifier.size(80.dp),
-                                    tint = InactiveColor
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
@@ -328,7 +324,7 @@ private fun AlarmCard(
             .fillMaxWidth()
             .clickable { onEdit() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -344,19 +340,19 @@ private fun AlarmCard(
                         text = String.format("%02d:%02d", alarm.hour, alarm.minute),
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (alarm.isEnabled) DarkBrand else Color(0xFF808191).copy(alpha = 0.6f),
+                        color = if (alarm.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         letterSpacing = 1.sp
                     )
                     if (alarm.alarmType == "SCHEDULE") {
                         Spacer(modifier = Modifier.width(8.dp))
                         Box(
                             modifier = Modifier
-                                .background(ActiveColor.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = "作息",
-                                color = ActiveColor,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -369,7 +365,7 @@ private fun AlarmCard(
                         text = alarm.remark,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = if (alarm.isEnabled) DarkBrand else Color(0xFF808191).copy(alpha = 0.6f)
+                        color = if (alarm.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                 }
             }
@@ -394,9 +390,9 @@ private fun AlarmCard(
                     onCheckedChange = { onToggle() },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
-                        checkedTrackColor = ActiveColor,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary,
                         uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = Color(0xFFE2E2EA)
+                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 )
             }
@@ -496,7 +492,7 @@ private fun AddAlarmDialog(
                 Text(
                     "${dialogLoc.newAlarmTitle} ${String.format("%02d:%02d", selectedHour, selectedMinute)}",
                     fontWeight = FontWeight.Bold,
-                    color = DarkBrand
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             },
             text = {
@@ -509,8 +505,8 @@ private fun AddAlarmDialog(
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = ActiveColor,
-                            focusedLabelColor = ActiveColor
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            focusedLabelColor = MaterialTheme.colorScheme.primary
                         )
                     )
 
@@ -526,7 +522,7 @@ private fun AddAlarmDialog(
                             Text(
                                 text = dialogLoc.lockScreenEnabledTitle,
                                 fontWeight = FontWeight.SemiBold,
-                                color = DarkBrand,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 15.sp
                             )
                             Spacer(modifier = Modifier.height(2.dp))
@@ -541,9 +537,9 @@ private fun AddAlarmDialog(
                             onCheckedChange = { lockScreenEnabled = it },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
-                                checkedTrackColor = ActiveColor,
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
                                 uncheckedThumbColor = Color.White,
-                                uncheckedTrackColor = Color(0xFFE2E2EA)
+                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                         )
                     }
@@ -574,7 +570,7 @@ private fun AddAlarmDialog(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = if (isRingtoneClickable) ActiveColor else LightBrand
+                            contentColor = if (isRingtoneClickable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     ) {
                         Icon(
@@ -601,7 +597,7 @@ private fun AddAlarmDialog(
             confirmButton = {
                 Button(
                     onClick = { onConfirm(selectedHour, selectedMinute, remark, ringtoneUri, lockScreenEnabled) },
-                    colors = ButtonDefaults.buttonColors(containerColor = ActiveColor)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text(dialogLoc.addBtn)
                 }
@@ -627,7 +623,7 @@ private fun EditRemarkDialog(
     val dialogLoc = LocalLocalization.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(dialogLoc.editRemarkTitle, fontWeight = FontWeight.Bold, color = DarkBrand) },
+        title = { Text(dialogLoc.editRemarkTitle, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
         text = {
             OutlinedTextField(
                 value = text,
@@ -637,15 +633,15 @@ private fun EditRemarkDialog(
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ActiveColor,
-                    focusedLabelColor = ActiveColor
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary
                 )
             )
         },
         confirmButton = {
             Button(
                 onClick = { onConfirm(text) },
-                colors = ButtonDefaults.buttonColors(containerColor = ActiveColor)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text(dialogLoc.saveBtn)
             }
@@ -673,7 +669,10 @@ fun ScheduleReminderBanner(onClick: () -> Unit) {
             modifier = Modifier
                 .background(
                     Brush.horizontalGradient(
-                        colors = listOf(Color(0xFF6C5DD3), Color(0xFF8B7CF0))
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.secondary
+                        )
                     )
                 )
                 .padding(20.dp)
@@ -733,8 +732,8 @@ fun ScheduleReminderBanner(onClick: () -> Unit) {
                     Button(
                         onClick = onClick,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White,
-                            contentColor = Color(0xFF6C5DD3)
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.primary
                         ),
                         shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)

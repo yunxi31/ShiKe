@@ -29,10 +29,6 @@ import androidx.navigation.NavController
 import com.pomodoroalert.ui.RingtoneCopyHelper
 import com.pomodoroalert.ui.viewmodel.ScheduleViewModel
 
-private val DarkBrand = Color(0xFF1B1D21)
-private val ActiveColor = Color(0xFF6C5DD3)
-private val PageBg = Color(0xFFF7F8FC)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleScreen(
@@ -88,15 +84,15 @@ fun ScheduleScreen(
     }
 
     Scaffold(
-        containerColor = PageBg,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text("作息提醒设置", fontWeight = FontWeight.Bold, color = DarkBrand, fontSize = 20.sp)
+                    Text("作息提醒设置", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp)
                 },
                 navigationIcon = {
                     IconButton(onClick = { onBackClick() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "返回", tint = DarkBrand)
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "返回", tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
                 actions = {
@@ -111,7 +107,7 @@ fun ScheduleScreen(
                     ) {
                         Text(
                             text = "保存",
-                            color = if (drafts.isNotEmpty()) ActiveColor else Color.Gray,
+                            color = if (drafts.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
                         )
@@ -127,7 +123,7 @@ fun ScheduleScreen(
                 modifier = Modifier.fillMaxWidth(),
                 tonalElevation = 8.dp,
                 shadowElevation = 8.dp,
-                color = Color.White
+                color = MaterialTheme.colorScheme.surface
             ) {
                 Column(
                     modifier = Modifier
@@ -137,14 +133,14 @@ fun ScheduleScreen(
                     if (markdownText.isNotBlank() && drafts.isEmpty()) {
                         Text(
                             text = "未识别到有效作息，请检查格式如：06:00 - 06:40 起床",
-                            color = Color(0xFFE53935),
+                            color = MaterialTheme.colorScheme.error,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
                     } else if (drafts.isNotEmpty()) {
                         Text(
                             text = "已识别出 ${drafts.size} 个作息段闹钟",
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
@@ -170,7 +166,7 @@ fun ScheduleScreen(
                             .fillMaxWidth()
                             .height(50.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (drafts.isNotEmpty()) ActiveColor else Color(0xFFCCCCCC)
+                            containerColor = if (drafts.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -193,7 +189,7 @@ fun ScheduleScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -201,13 +197,13 @@ fun ScheduleScreen(
                             text = "粘贴或编辑作息安排",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
-                            color = DarkBrand
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "支持格式: HH:mm - HH:mm 事项安排。每一项占一行，作息安排必须是连续的。",
                             fontSize = 12.sp,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         OutlinedTextField(
@@ -223,8 +219,8 @@ fun ScheduleScreen(
                                 .height(160.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = ActiveColor,
-                                unfocusedBorderColor = Color(0xFFE2E2EA)
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                             )
                         )
                         Spacer(modifier = Modifier.height(12.dp))
@@ -240,7 +236,7 @@ fun ScheduleScreen(
                                 .fillMaxWidth()
                                 .height(48.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (drafts.isNotEmpty()) ActiveColor else Color(0xFFCCCCCC)
+                                containerColor = if (drafts.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
                             ),
                             shape = RoundedCornerShape(10.dp)
                         ) {
@@ -257,7 +253,7 @@ fun ScheduleScreen(
                         text = "识别出的闹钟提醒清单 (${drafts.size}个)",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = DarkBrand,
+                        color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
                 }
@@ -266,7 +262,7 @@ fun ScheduleScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
@@ -284,13 +280,13 @@ fun ScheduleScreen(
                                     ),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 18.sp,
-                                    color = ActiveColor
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
                                     text = draft.content,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 15.sp,
-                                    color = DarkBrand,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f, fill = false).padding(start = 12.dp)
@@ -298,7 +294,7 @@ fun ScheduleScreen(
                             }
                             
                             Spacer(modifier = Modifier.height(12.dp))
-                            HorizontalDivider(color = Color(0xFFF1F1F5))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             Spacer(modifier = Modifier.height(12.dp))
 
                             // ── Enable Alarm Option ──
@@ -312,12 +308,12 @@ fun ScheduleScreen(
                                         text = "启用该时段闹铃",
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 14.sp,
-                                        color = DarkBrand
+                                        color = MaterialTheme.colorScheme.onBackground
                                     )
                                     Text(
                                         text = "在此时间段是否触发闹铃和语音播报",
                                         fontSize = 11.sp,
-                                        color = Color.Gray
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 Switch(
@@ -325,15 +321,15 @@ fun ScheduleScreen(
                                     onCheckedChange = { viewModel.updateDraftEnabled(draft.id, it) },
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = Color.White,
-                                        checkedTrackColor = ActiveColor,
+                                        checkedTrackColor = MaterialTheme.colorScheme.primary,
                                         uncheckedThumbColor = Color.White,
-                                        uncheckedTrackColor = Color(0xFFE2E2EA)
+                                        uncheckedTrackColor = MaterialTheme.colorScheme.outlineVariant
                                     )
                                 )
                             }
                             
                             Spacer(modifier = Modifier.height(12.dp))
-                            HorizontalDivider(color = Color(0xFFF1F1F5))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             Spacer(modifier = Modifier.height(12.dp))
 
                             // ── Play Ringtone Option ──
@@ -347,12 +343,12 @@ fun ScheduleScreen(
                                         text = "同时播放闹铃铃声",
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 14.sp,
-                                        color = DarkBrand
+                                        color = MaterialTheme.colorScheme.onBackground
                                     )
                                     Text(
                                         text = "默认关闭（仅语音播报）。开启后将同时播放闹铃音乐",
                                         fontSize = 11.sp,
-                                        color = Color.Gray
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 Switch(
@@ -360,15 +356,15 @@ fun ScheduleScreen(
                                     onCheckedChange = { viewModel.updateDraftRingtoneEnabled(draft.id, it) },
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = Color.White,
-                                        checkedTrackColor = ActiveColor,
+                                        checkedTrackColor = MaterialTheme.colorScheme.primary,
                                         uncheckedThumbColor = Color.White,
-                                        uncheckedTrackColor = Color(0xFFE2E2EA)
+                                        uncheckedTrackColor = MaterialTheme.colorScheme.outlineVariant
                                     )
                                 )
                             }
                             
                             Spacer(modifier = Modifier.height(12.dp))
-                            HorizontalDivider(color = Color(0xFFF1F1F5))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             Spacer(modifier = Modifier.height(12.dp))
 
                             // ── Lock Screen Setting Row ──
@@ -382,12 +378,12 @@ fun ScheduleScreen(
                                         text = "闹钟锁屏大屏提醒",
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 14.sp,
-                                        color = DarkBrand
+                                        color = MaterialTheme.colorScheme.onBackground
                                     )
                                     Text(
                                         text = "响铃时强制亮屏并弹出全屏闹铃界面",
                                         fontSize = 11.sp,
-                                        color = Color.Gray
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 Switch(
@@ -395,18 +391,18 @@ fun ScheduleScreen(
                                     onCheckedChange = { viewModel.updateDraftLockScreenEnabled(draft.id, it) },
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = Color.White,
-                                        checkedTrackColor = ActiveColor,
+                                        checkedTrackColor = MaterialTheme.colorScheme.primary,
                                         uncheckedThumbColor = Color.White,
-                                        uncheckedTrackColor = Color(0xFFE2E2EA)
+                                        uncheckedTrackColor = MaterialTheme.colorScheme.outlineVariant
                                     )
                                 )
                             }
                             
                             Spacer(modifier = Modifier.height(12.dp))
-                            HorizontalDivider(color = Color(0xFFF1F1F5))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             Spacer(modifier = Modifier.height(12.dp))
                             
-                            Text("语音提醒设置", fontSize = 12.sp, color = Color.Gray)
+                            Text("语音提醒设置", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(modifier = Modifier.height(8.dp))
                             
                             // Voice mode switch
@@ -416,31 +412,31 @@ fun ScheduleScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(if (isTTS) ActiveColor else Color(0xFFF1F1F5))
+                                        .background(if (isTTS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer)
                                         .clickable { viewModel.updateDraftVoiceMode(draft.id, "TTS") }
                                         .padding(vertical = 8.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                      Text(
-                                        text = "文字播报 (TTS)",
-                                        color = if (isTTS) Color.White else Color.Gray,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
+                                         text = "文字播报 (TTS)",
+                                         color = if (isTTS) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                         fontSize = 13.sp,
+                                         fontWeight = FontWeight.Medium
+                                     )
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(if (!isTTS) ActiveColor else Color(0xFFF1F1F5))
+                                        .background(if (!isTTS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer)
                                         .clickable { viewModel.updateDraftVoiceMode(draft.id, "AUDIO") }
                                         .padding(vertical = 8.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = "录音/音频",
-                                        color = if (!isTTS) Color.White else Color.Gray,
+                                        color = if (!isTTS) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -457,8 +453,8 @@ fun ScheduleScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(8.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = ActiveColor,
-                                        unfocusedBorderColor = Color(0xFFE2E2EA)
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                                     ),
                                     maxLines = 3
                                 )
@@ -472,7 +468,7 @@ fun ScheduleScreen(
                                             activeDraftIdForAudioPicker = draft.id
                                             audioPickerLauncher.launch("audio/*")
                                         },
-                                        colors = ButtonDefaults.buttonColors(containerColor = ActiveColor),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                         shape = RoundedCornerShape(8.dp),
                                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                                     ) {
@@ -482,7 +478,7 @@ fun ScheduleScreen(
                                     Text(
                                         text = draft.audioFileName ?: "未选择音频 (响铃时播报TTS)",
                                         fontSize = 13.sp,
-                                        color = if (draft.audioFileName != null) DarkBrand else Color.Gray,
+                                        color = if (draft.audioFileName != null) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier.weight(1f)

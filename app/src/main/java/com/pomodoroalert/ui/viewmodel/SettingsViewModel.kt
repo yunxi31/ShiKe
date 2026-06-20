@@ -48,4 +48,11 @@ class SettingsViewModel @Inject constructor(
     fun setMotivationalQuote(quote: String) {
         viewModelScope.launch { configRepo.setMotivationalQuote(quote) }
     }
+
+    val darkMode: StateFlow<Boolean> = configRepo.darkMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun toggleDarkMode() {
+        viewModelScope.launch { configRepo.setDarkMode(!darkMode.value) }
+    }
 }

@@ -30,13 +30,6 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import android.media.MediaPlayer
 import com.pomodoroalert.ui.SystemPermissionHelper
 
-// Design Tokens
-private val PageBackground = Color(0xFFF7F8FC)
-private val Brand = Color(0xFF6C5DD3)
-private val CardBg = Color.White
-private val TextMain = Color(0xFF1B1D21)
-private val TextMuted = Color(0xFF808191)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavController) {
@@ -47,6 +40,15 @@ fun SettingsScreen(navController: NavController) {
     val builtInRingtone by viewModel.builtInRingtone.collectAsState()
     val motivationalQuote by viewModel.motivationalQuote.collectAsState()
     val loc = LocalLocalization.current
+
+    val pageBackground = MaterialTheme.colorScheme.background
+    val brand = MaterialTheme.colorScheme.primary
+    val cardBg = MaterialTheme.colorScheme.surface
+    val textMain = MaterialTheme.colorScheme.onBackground
+    val textMuted = MaterialTheme.colorScheme.onSurfaceVariant
+    val isDark = pageBackground == Color(0xFF1B1D21)
+    val greenColor = if (isDark) Color(0xFF81C784) else Color(0xFF2E7D32)
+    val redColor = if (isDark) Color(0xFFE57373) else Color(0xFFD32F2F)
 
     val context = LocalContext.current
     var previewPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
@@ -89,13 +91,13 @@ fun SettingsScreen(navController: NavController) {
         }
     }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = PageBackground) {
+    Surface(modifier = Modifier.fillMaxSize(), color = pageBackground) {
         Column(modifier = Modifier.fillMaxSize()) {
             CenterAlignedTopAppBar(
-                title = { Text(loc.settingsTitle, fontWeight = FontWeight.Bold, color = TextMain, fontSize = 20.sp) },
+                title = { Text(loc.settingsTitle, fontWeight = FontWeight.Bold, color = textMain, fontSize = 20.sp) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = loc.backDescription, tint = TextMain)
+                        Icon(Icons.Filled.ArrowBack, contentDescription = loc.backDescription, tint = textMain)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
@@ -112,7 +114,7 @@ fun SettingsScreen(navController: NavController) {
 
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    colors = CardDefaults.cardColors(containerColor = cardBg),
                     shape = RoundedCornerShape(20.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
@@ -122,18 +124,18 @@ fun SettingsScreen(navController: NavController) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(loc.earphoneModeTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                            Text(loc.earphoneModeTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = textMain)
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(loc.earphoneModeDesc, fontSize = 12.sp, color = TextMuted)
+                            Text(loc.earphoneModeDesc, fontSize = 12.sp, color = textMuted)
                         }
                         Switch(
                             checked = earphoneMode,
                             onCheckedChange = { viewModel.setEarphoneMode(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
-                                checkedTrackColor = Brand,
-                                uncheckedThumbColor = Color.White,
-                                uncheckedTrackColor = Color(0xFFE2E2EA)
+                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                                checkedTrackColor = brand,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                         )
                     }
@@ -141,14 +143,14 @@ fun SettingsScreen(navController: NavController) {
 
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    colors = CardDefaults.cardColors(containerColor = cardBg),
                     shape = RoundedCornerShape(20.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
-                        Text(loc.languageSettingTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                        Text(loc.languageSettingTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = textMain)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(loc.languageSettingDesc, fontSize = 12.sp, color = TextMuted)
+                        Text(loc.languageSettingDesc, fontSize = 12.sp, color = textMuted)
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -175,14 +177,14 @@ fun SettingsScreen(navController: NavController) {
                 // Ringtone Source Card
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    colors = CardDefaults.cardColors(containerColor = cardBg),
                     shape = RoundedCornerShape(20.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
-                        Text(loc.ringtoneModeTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                        Text(loc.ringtoneModeTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = textMain)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(loc.ringtoneModeDesc, fontSize = 12.sp, color = TextMuted)
+                        Text(loc.ringtoneModeDesc, fontSize = 12.sp, color = textMuted)
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -192,8 +194,8 @@ fun SettingsScreen(navController: NavController) {
                                 onClick = { viewModel.setRingtoneSource("built_in") },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (ringtoneSource == "built_in") Brand else Brand.copy(alpha = 0.08f),
-                                    contentColor = if (ringtoneSource == "built_in") Color.White else Brand
+                                    containerColor = if (ringtoneSource == "built_in") brand else brand.copy(alpha = 0.08f),
+                                    contentColor = if (ringtoneSource == "built_in") MaterialTheme.colorScheme.onPrimary else brand
                                 ),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
@@ -208,8 +210,8 @@ fun SettingsScreen(navController: NavController) {
                                 },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (ringtoneSource == "local") Brand else Brand.copy(alpha = 0.08f),
-                                    contentColor = if (ringtoneSource == "local") Color.White else Brand
+                                    containerColor = if (ringtoneSource == "local") brand else brand.copy(alpha = 0.08f),
+                                    contentColor = if (ringtoneSource == "local") MaterialTheme.colorScheme.onPrimary else brand
                                 ),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
@@ -223,12 +225,12 @@ fun SettingsScreen(navController: NavController) {
                 if (ringtoneSource == "built_in") {
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        colors = CardDefaults.cardColors(containerColor = CardBg),
+                        colors = CardDefaults.cardColors(containerColor = cardBg),
                         shape = RoundedCornerShape(20.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
-                            Text(loc.selectBuiltInRingtoneTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                            Text(loc.selectBuiltInRingtoneTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = textMain)
                             Spacer(modifier = Modifier.height(16.dp))
                             
                             val ringtoneFiles = remember {
@@ -249,7 +251,7 @@ fun SettingsScreen(navController: NavController) {
                             }
                             
                             if (ringtoneFiles.isEmpty()) {
-                                Text(text = "No ringtones found in assets", color = TextMuted, fontSize = 14.sp)
+                                Text(text = "No ringtones found in assets", color = textMuted, fontSize = 14.sp)
                             } else {
                                 // Auto-correct selection if current is not in the list
                                 if (builtInRingtone !in ringtoneFiles) {
@@ -283,8 +285,8 @@ fun SettingsScreen(navController: NavController) {
                                                 playPreview(fileName)
                                             },
                                             colors = RadioButtonDefaults.colors(
-                                                selectedColor = Brand,
-                                                unselectedColor = TextMuted
+                                                selectedColor = brand,
+                                                unselectedColor = textMuted
                                             )
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
@@ -292,7 +294,7 @@ fun SettingsScreen(navController: NavController) {
                                             text = displayName,
                                             fontSize = 14.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isSelected) Brand else TextMain,
+                                            color = if (isSelected) brand else textMain,
                                             modifier = Modifier
                                                 .weight(1f)
                                                 .clickable {
@@ -312,31 +314,31 @@ fun SettingsScreen(navController: NavController) {
                 // Custom Motivational Quote Card
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    colors = CardDefaults.cardColors(containerColor = cardBg),
                     shape = RoundedCornerShape(20.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
-                        Text(loc.motivationalQuoteTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                        Text(loc.motivationalQuoteTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = textMain)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(loc.motivationalQuoteDesc, fontSize = 12.sp, color = TextMuted)
+                        Text(loc.motivationalQuoteDesc, fontSize = 12.sp, color = textMuted)
                         Spacer(modifier = Modifier.height(12.dp))
 
                         OutlinedTextField(
                             value = motivationalQuote,
                             onValueChange = { viewModel.setMotivationalQuote(it) },
                             modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text(loc.motivationalQuotePlaceholder, fontSize = 14.sp, color = TextMuted) },
+                            placeholder = { Text(loc.motivationalQuotePlaceholder, fontSize = 14.sp, color = textMuted) },
                             singleLine = false,
                             maxLines = 3,
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Brand,
-                                unfocusedBorderColor = TextMuted.copy(alpha = 0.2f),
-                                focusedLabelColor = Brand,
-                                cursorColor = Brand,
-                                focusedTextColor = TextMain,
-                                unfocusedTextColor = TextMain
+                                focusedBorderColor = brand,
+                                unfocusedBorderColor = textMuted.copy(alpha = 0.2f),
+                                focusedLabelColor = brand,
+                                cursorColor = brand,
+                                focusedTextColor = textMain,
+                                unfocusedTextColor = textMain
                             )
                         )
                     }
@@ -347,21 +349,21 @@ fun SettingsScreen(navController: NavController) {
                 // Notification Permission Card
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    colors = CardDefaults.cardColors(containerColor = cardBg),
                     shape = RoundedCornerShape(20.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
-                        Text(loc.notificationsTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                        Text(loc.notificationsTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = textMain)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(loc.notificationsDesc, fontSize = 12.sp, color = TextMuted)
+                        Text(loc.notificationsDesc, fontSize = 12.sp, color = textMuted)
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val badgeColor = if (areNotificationsEnabled) Color(0xFF2E7D32) else Color(0xFFD32F2F)
+                            val badgeColor = if (areNotificationsEnabled) greenColor else redColor
                             val badgeText = if (areNotificationsEnabled) loc.notificationsEnabled else loc.notificationsDisabled
 
                             Surface(
@@ -383,7 +385,7 @@ fun SettingsScreen(navController: NavController) {
                             Button(
                                 onClick = { SystemPermissionHelper.openAppDetailsSettings(context) },
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(containerColor = Brand, contentColor = Color.White),
+                                colors = ButtonDefaults.buttonColors(containerColor = brand, contentColor = MaterialTheme.colorScheme.onPrimary),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text(text = loc.notificationsBtn, fontWeight = FontWeight.Bold)
@@ -395,21 +397,21 @@ fun SettingsScreen(navController: NavController) {
                 // Battery Optimization Card
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    colors = CardDefaults.cardColors(containerColor = cardBg),
                     shape = RoundedCornerShape(20.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
-                        Text(loc.batteryOptimizationTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                        Text(loc.batteryOptimizationTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = textMain)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(loc.batteryOptimizationDesc, fontSize = 12.sp, color = TextMuted)
+                        Text(loc.batteryOptimizationDesc, fontSize = 12.sp, color = textMuted)
                         Spacer(modifier = Modifier.height(12.dp))
                         
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val badgeColor = if (isIgnoringBattery) Color(0xFF2E7D32) else Color(0xFFD32F2F)
+                            val badgeColor = if (isIgnoringBattery) greenColor else redColor
                             val badgeText = if (isIgnoringBattery) loc.batteryOptimizationIgnored else loc.batteryOptimizationNotIgnored
                             
                             Surface(
@@ -431,7 +433,7 @@ fun SettingsScreen(navController: NavController) {
                             Button(
                                 onClick = { SystemPermissionHelper.requestIgnoreBatteryOptimizations(context) },
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(containerColor = Brand, contentColor = Color.White),
+                                colors = ButtonDefaults.buttonColors(containerColor = brand, contentColor = MaterialTheme.colorScheme.onPrimary),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text(text = loc.batteryOptimizationBtn, fontWeight = FontWeight.Bold)
@@ -443,22 +445,22 @@ fun SettingsScreen(navController: NavController) {
                 // Auto Start Card
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    colors = CardDefaults.cardColors(containerColor = cardBg),
                     shape = RoundedCornerShape(20.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
-                        Text(loc.autoStartTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                        Text(loc.autoStartTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = textMain)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(loc.autoStartDesc, fontSize = 12.sp, color = TextMuted)
+                        Text(loc.autoStartDesc, fontSize = 12.sp, color = textMuted)
                         Spacer(modifier = Modifier.height(12.dp))
                         
                         Button(
                             onClick = { SystemPermissionHelper.openAutoStartSettings(context) },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Brand.copy(alpha = 0.08f),
-                                contentColor = Brand
+                                containerColor = brand.copy(alpha = 0.08f),
+                                contentColor = brand
                             ),
                             shape = RoundedCornerShape(12.dp)
                         ) {
@@ -470,22 +472,22 @@ fun SettingsScreen(navController: NavController) {
                 // Lock Screen and Background Pop-up Permission Card
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    colors = CardDefaults.cardColors(containerColor = cardBg),
                     shape = RoundedCornerShape(20.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
-                        Text(loc.lockScreenPermTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                        Text(loc.lockScreenPermTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = textMain)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(loc.lockScreenPermDesc, fontSize = 12.sp, color = TextMuted)
+                        Text(loc.lockScreenPermDesc, fontSize = 12.sp, color = textMuted)
                         Spacer(modifier = Modifier.height(12.dp))
                         
                         Button(
                             onClick = { SystemPermissionHelper.openAppDetailsSettings(context) },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Brand.copy(alpha = 0.08f),
-                                contentColor = Brand
+                                containerColor = brand.copy(alpha = 0.08f),
+                                contentColor = brand
                             ),
                             shape = RoundedCornerShape(12.dp)
                         ) {
@@ -505,12 +507,13 @@ private fun LanguageOption(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val brand = MaterialTheme.colorScheme.primary
     Button(
         onClick = onClick,
         modifier = modifier,
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) Brand else Brand.copy(alpha = 0.08f),
-            contentColor = if (isSelected) Color.White else Brand
+            containerColor = if (isSelected) brand else brand.copy(alpha = 0.08f),
+            contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else brand
         ),
         shape = RoundedCornerShape(12.dp)
     ) {

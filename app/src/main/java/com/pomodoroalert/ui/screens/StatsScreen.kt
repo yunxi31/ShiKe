@@ -25,11 +25,6 @@ import androidx.navigation.NavController
 import com.pomodoroalert.ui.viewmodel.StatsViewModel
 import com.pomodoroalert.ui.localization.LocalLocalization
 
-// Design Tokens
-private val PageBackground = Color(0xFFF7F8FC)
-private val TextMain = Color(0xFF1B1D21)
-private val BrandColor = Color(0xFF6C5DD3)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatsScreen(navController: NavController) {
@@ -38,13 +33,17 @@ fun StatsScreen(navController: NavController) {
     val completedPomodoros by viewModel.completedPomodoros.collectAsState()
     val loc = LocalLocalization.current
 
-    Surface(modifier = Modifier.fillMaxSize(), color = PageBackground) {
+    val pageBackground = MaterialTheme.colorScheme.background
+    val textMain = MaterialTheme.colorScheme.onBackground
+    val brandColor = MaterialTheme.colorScheme.primary
+
+    Surface(modifier = Modifier.fillMaxSize(), color = pageBackground) {
         Column(modifier = Modifier.fillMaxSize()) {
             CenterAlignedTopAppBar(
-                title = { Text(loc.statsTitle, fontWeight = FontWeight.Bold, color = TextMain, fontSize = 20.sp) },
+                title = { Text(loc.statsTitle, fontWeight = FontWeight.Bold, color = textMain, fontSize = 20.sp) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = loc.backDescription, tint = TextMain)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = loc.backDescription, tint = textMain)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
@@ -72,7 +71,7 @@ fun StatsScreen(navController: NavController) {
                         icon = Icons.Rounded.CheckCircle,
                         title = loc.completedTasksTitle,
                         value = completedTasks.toString(),
-                        tintColor = BrandColor, // violet purple
+                        tintColor = brandColor, // violet purple
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -92,7 +91,7 @@ private fun ModernStatCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
@@ -116,7 +115,7 @@ private fun ModernStatCard(
             Spacer(modifier = Modifier.height(20.dp))
             Text(
                 text = title,
-                color = Color(0xFF808191),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -125,7 +124,7 @@ private fun ModernStatCard(
                 text = value,
                 fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1B1D21)
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
     }

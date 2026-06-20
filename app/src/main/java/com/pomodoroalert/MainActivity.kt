@@ -3,8 +3,6 @@ package com.pomodoroalert
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import com.pomodoroalert.ui.AppNavGraph
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -42,11 +40,8 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            MaterialTheme {
-                Surface {
-                    AppNavGraph()
-                }
-            }
+            AppNavGraph()
         }
     }
 }
+
