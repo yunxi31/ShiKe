@@ -75,3 +75,17 @@ window_dump*.xml
 *.class
 *.bak
 *~
+
+# ============================
+# 本地调试与临时产物（根目录下）
+# ============================
+.gradle-user-home/
+/db_extracted/
+/*.py
+/*.png
+/*.xml
+/*.tar
+/*.txt
+/*.db
+/*.log
+
